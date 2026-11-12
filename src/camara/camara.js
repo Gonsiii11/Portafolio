@@ -4,15 +4,12 @@ import * as T from 'three';
 import { reduce, clamp } from '../config.js';
 import { W3 } from '../moto/moto.js';
 
-/* home = rider's eyes; the others lean in. t = look-at point, w/h = world size to fit, d = view direction */
+/* home = rider's eyes (also behind the section pages, blurred); ext = the bike from outside.
+   t = look-at point, w/h = world size to fit, d = view direction */
 var VIEWS = {
   /* close to the TFT so its menu can be touched: ~300 px wide at 1440×900, ~250 px at 400×800 (eyeP/tgtP = portrait) */
   home: { fp: true, eye: W3([0, 0.74, -0.26]), tgt: W3([0, 0.30, -1.0]), eyeP: W3([0, 0.68, -0.37]), tgtP: W3([0, 0.16, -1.0]) },
-  about: { t: W3([0.003, 0.415, -0.551]), w: 0.2, h: 0.11, d: [0.005, 0.568, 0.823] },
-  projects: { t: W3([-0.24, 0.5, -0.47]), w: 0.28, h: 0.18, d: [-0.15, 0.75, 0.65] },
-  contact: { t: W3([0.24, 0.5, -0.47]), w: 0.28, h: 0.18, d: [0.15, 0.75, 0.65] },
-  ext: { t: W3([0, 0.32, 0.01]), w: 2.5, h: 1.3, d: [0.55, 0.3, 0.8] },
-  tank: { t: W3([0, 0.44, -0.12]), w: 0.6, h: 0.45, d: [0, 0.8, 0.6] }
+  ext: { t: W3([0, 0.32, 0.01]), w: 2.5, h: 1.3, d: [0.55, 0.3, 0.8] }
 };
 
 export function createCamera(renderer, rig) {
@@ -93,9 +90,10 @@ export function createCamera(renderer, rig) {
       view.ext = !!on; view.yawT = 0; view.pitchT = view.ext ? 0.08 : 0; view.lastInteract = performance.now();
       if (view.ext) { view.cur = 'ext'; view.speedT = 0; view.spinT = -0.5; } else { view.cur = 'home'; view.speedT = 16; view.spinT = rig.rotation.y = 0; }
     },
-    setView: function (id, viewKey) {
+    /* sections no longer zoom to a control: the rider's view stays, blurred behind the page */
+    setView: function (id) {
       if (view.ext) { view.ext = false; view.spinT = rig.rotation.y = 0; }
-      view.cur = viewKey || id;
+      view.cur = 'home';
       view.yawT = 0; view.pitchT = 0; view.speedT = id === 'home' ? 16 : 5;
     }
   };

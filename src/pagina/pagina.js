@@ -6,7 +6,7 @@ export function createPage() {
   var panel = document.getElementById('panel');
   var hero = document.getElementById('hero');
   var hint = document.getElementById('hint');
-  var extBtn = document.getElementById('extbtn');
+  var extBtn = document.getElementById('extbtn'), app = document.getElementById('app');
   var state = { section: 'home', mode: 'todo', boot: false };
   var gl = null, extOn = false;
 
@@ -46,11 +46,15 @@ export function createPage() {
     document.getElementById('credit').hidden = open;
     extBtn.hidden = !gl;
     extOn = false; extBtn.textContent = 'Ver la moto';
+    app.classList.toggle('reading', open);  /* full-screen page: the scene goes blurred and dark behind it */
     if (open) {
       document.getElementById('pbody').scrollTop = 0;
-      if (opts.focus !== false) { try { panel.focus({ preventScroll: true }); } catch (e) {} }
+      if (opts.focus !== false) {  /* focus the page title, so screen readers start reading the page */
+        var title = panel.querySelector('.sec[data-sec="' + id + '"] h2');
+        if (title) { title.setAttribute('tabindex', '-1'); try { title.focus({ preventScroll: true }); } catch (e) {} }
+      }
     }
-    if (gl) gl.setView(id, opts.view);
+    if (gl) { gl.setView(id); gl.setReading(open); }
   }
 
   document.addEventListener('click', function (e) {

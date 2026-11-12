@@ -51,7 +51,7 @@ export function createScene(page) {
   var cam = createCamera(renderer, bike.rig), camera = cam.camera, view = cam.view;
   createControls(canvas, cam, bike, page);
 
-  var speed = 0, last = performance.now();
+  var speed = 0, last = performance.now(), reading = false, lastDraw = 0;
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
 
@@ -71,6 +71,9 @@ export function createScene(page) {
     sky.update(camera);
     bike.updateDash(dt, { speedMs: speed, travelledM: curves.travelled() });
 
+    /* behind a section page the scene is blurred: ten pictures a second are plenty (the world keeps moving) */
+    if (reading && now - lastDraw < 100) { requestAnimationFrame(frame); return; }
+    lastDraw = now;
     if (!reduce) terrain.setTime(now / 1000);
     curves.updateLean(speed, dt);
     curves.bendScene(bike.rig);
@@ -91,7 +94,8 @@ export function createScene(page) {
 
   return {
     setExt: function (on) { cam.setExt(on); },
-    setView: function (id, viewKey) { cam.setView(id, viewKey); },
+    setView: function (id) { cam.setView(id); },
+    setReading: function (on) { reading = !!on; },
     setModeVisual: function () {}  /* the TFT no longer shows the project filter */
   };
 }
