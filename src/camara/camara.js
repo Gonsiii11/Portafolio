@@ -4,11 +4,13 @@ import * as T from 'three';
 import { reduce, clamp } from '../config.js';
 import { W3 } from '../moto/moto.js';
 
-/* home = rider's eyes (also behind the section pages, blurred); ext = the bike from outside.
+/* home = rider's eyes (also behind the section pages, blurred); tft = close to the screen to use its menu;
+   ext = the bike from outside.
    t = look-at point, w/h = world size to fit, d = view direction */
 var VIEWS = {
-  /* close to the TFT so its menu can be touched: ~300 px wide at 1440×900, ~250 px at 400×800 (eyeP/tgtP = portrait) */
-  home: { fp: true, eye: W3([0, 0.74, -0.26]), tgt: W3([0, 0.30, -1.0]), eyeP: W3([0, 0.68, -0.37]), tgtP: W3([0, 0.16, -1.0]) },
+  home: { fp: true, eye: W3([0, 0.92, 0.22]), tgt: W3([0, 0.52, -0.8]), eyeP: W3([0, 1.05, 0.5]), tgtP: W3([0, 0.45, -0.7]) },
+  /* step 1 of the TFT menu: the camera comes close and faces the screen (centre and normal measured from the model) */
+  tft: { t: W3([0.0095, 0.419, -0.548]), w: 0.19, h: 0.1, d: [0.005, 0.568, 0.823] },
   ext: { t: W3([0, 0.32, 0.01]), w: 2.5, h: 1.3, d: [0.55, 0.3, 0.8] }
 };
 
@@ -25,14 +27,8 @@ export function createCamera(renderer, rig) {
 
   /* the part of the screen the scene should frame its subject in (the hero text and the section panel take the rest) */
   function region(W, H) {
-    var open = view.cur !== 'home' && view.cur !== 'ext';
-    if (W >= 900) {
-      if (!open) return { l: 380, t: 70, r: W - 16, b: H - 24 };
-      var pw = Math.min(440, W * 0.42) + 32;
-      return { l: 16, t: 84, r: W - pw, b: H - 16 };
-    }
-    if (!open) return { l: 0, t: Math.min(250, H * 0.34), r: W, b: H - 56 };
-    return { l: 0, t: 110, r: W, b: H - Math.min(H * 0.52, 460) };
+    if (W >= 900) return { l: 380, t: 70, r: W - 16, b: H - 24 };
+    return { l: 0, t: Math.min(250, H * 0.34), r: W, b: H - 56 };
   }
   function resize() {
     size.w = app.clientWidth || 1; size.h = app.clientHeight || 1;
@@ -91,6 +87,9 @@ export function createCamera(renderer, rig) {
       if (view.ext) { view.cur = 'ext'; view.speedT = 0; view.spinT = -0.5; } else { view.cur = 'home'; view.speedT = 16; view.spinT = rig.rotation.y = 0; }
     },
     /* sections no longer zoom to a control: the rider's view stays, blurred behind the page */
+    /* the TFT menu, step 1: come close to the screen; back(): return to the rider's view */
+    focusTft: function () { view.cur = 'tft'; view.yawT = 0; view.pitchT = 0; view.speedT = 8; view.lastInteract = performance.now(); },
+    back: function () { view.cur = 'home'; view.yawT = 0; view.pitchT = 0; view.speedT = 16; },
     setView: function (id) {
       if (view.ext) { view.ext = false; view.spinT = rig.rotation.y = 0; }
       view.cur = 'home';

@@ -1,7 +1,7 @@
 # Portfolio de Iván Herrera González
 
 ## Qué es
-Web personal en 3D para buscar prácticas. El visitante ve una moto en primera persona por una carretera de sierra. La pantalla TFT de la moto es el menú: un cuadro completo (hora, «busco prácticas», cuentarrevoluciones con velocidad y marcha reales, km recorridos) con tres opciones táctiles, Sobre mí · Proyectos · Contacto. Cada sección se abre como página a pantalla completa con la escena desenfocada detrás. El menú de arriba hace lo mismo y añade «Ver la moto» (la moto gira por fuera); es la vía para teclado, lectores de pantalla y la versión sin 3D.
+Web personal en 3D para buscar prácticas. El visitante ve una moto en primera persona por una carretera de sierra. La pantalla TFT de la moto es el menú: un cuadro completo (hora, «busco prácticas», cuentarrevoluciones con velocidad y marcha reales, km recorridos) con tres opciones táctiles, Sobre mí · Proyectos · Contacto. Se usa en dos pasos (`src/camara/toque.js`): desde la vista normal, desde atrás como siempre, un toque en la TFT acerca la cámara; de cerca, un toque en una opción la abre (tocar fuera o Escape vuelve). Cada sección se abre como página a pantalla completa con la escena desenfocada detrás. El menú de arriba hace lo mismo y añade «Ver la moto» (la moto gira por fuera); es la vía para teclado, lectores de pantalla y la versión sin 3D.
 - Mensaje: primero que a Iván le gusta crear software y construir soluciones; la pasión por la automoción va al final, como nota personal (diseño en `docs/superpowers/specs/2026-11-12-paginas-y-tft-design.md`).
 
 ## Objetivo y tono

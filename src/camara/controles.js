@@ -1,29 +1,38 @@
-/* Input: drag to look around (or spin the bike when seen from outside); tap or click a row of the TFT menu to open
-   its section, hover it to light it up; arrow keys turn the view and Home recentres it. */
+/* Input: drag to look around (or spin the bike when seen from outside). The TFT menu works in two steps (toque.js):
+   a tap on the screen brings the camera close to it; close up, a tap on a row opens its section (hovering lights the
+   row up) and a tap elsewhere, or Escape, goes back. Arrow keys turn the view and Home recentres it. */
 import * as T from 'three';
 import { clamp } from '../config.js';
 import { tftHit } from '../moto/tft.js';
 import { takesViewKeys } from './teclas.js';
+import { tftTap } from './toque.js';
 
 export function createControls(canvas, cam, bike, page) {
   var camera = cam.camera, view = cam.view;
   var ray = new T.Raycaster(), ndc = new T.Vector2(), hoverId = null, flashTimer = 0;
 
-  /* the TFT menu row under a screen point ('about' | 'projects' | 'contact'), or null */
+  /* what is under a screen point: { onScreen: the TFT was hit, row: its menu row or null } */
   function pick(cx, cy) {
-    if (view.ext) return null;
+    if (view.ext) return { onScreen: false, row: null };
     var r = canvas.getBoundingClientRect();
     ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
     var hit = ray.intersectObject(bike.screen, false)[0];
-    return hit && hit.uv ? tftHit(hit.uv.x, hit.uv.y) : null;
+    return { onScreen: !!hit, row: hit && hit.uv ? tftHit(hit.uv.x, hit.uv.y) : null };
   }
-  function setHover(id) {
-    if (id === hoverId) return;
-    hoverId = id;
-    bike.setHover(id);
-    canvas.style.cursor = view.drag ? 'grabbing' : (id ? 'pointer' : 'grab');
+  /* rows light up only close up; from the rider's view the whole screen is the target */
+  var overScreen = false;
+  function setHover(p) {
+    var id = view.cur === 'tft' ? p.row : null, on = view.cur === 'tft' ? !!p.row : p.onScreen;
+    if (id !== hoverId) { hoverId = id; bike.setHover(id); }
+    overScreen = on;
+    canvas.style.cursor = view.drag ? 'grabbing' : (on ? 'pointer' : 'grab');
   }
+  var NONE = { onScreen: false, row: null };
+  /* the hint line says what to do in each step */
+  var hint = document.getElementById('hint'), HINT_HOME = hint ? hint.textContent : '', HINT_TFT = 'TOCA UNA OPCIÓN · TOCA FUERA PARA VOLVER';
+  function focusTft() { cam.focusTft(); setHover(NONE); if (hint) hint.textContent = HINT_TFT; }
+  function goBack() { cam.back(); setHover(NONE); if (hint) hint.textContent = HINT_HOME; }
 
   canvas.addEventListener('pointerdown', function (e) {
     view.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
@@ -50,18 +59,25 @@ export function createControls(canvas, cam, bike, page) {
   function endDrag(e, cancelled) {
     if (!view.drag || view.drag.id !== e.pointerId) return;
     var moved = view.drag.moved; view.drag = null;
-    canvas.style.cursor = hoverId ? 'pointer' : 'grab';
+    canvas.style.cursor = overScreen ? 'pointer' : 'grab';
     if (moved || cancelled) return;
-    var id = pick(e.clientX, e.clientY);
-    if (!id) return;
+    var p = pick(e.clientX, e.clientY), act = tftTap(view.cur, p.onScreen, p.row);
+    if (!act) return;
+    if (act.focus) { focusTft(); return; }
+    if (act.back) { goBack(); return; }
     if (e.pointerType !== 'mouse') {  /* touch has no hover: light the row for a moment */
-      setHover(id); clearTimeout(flashTimer); flashTimer = setTimeout(function () { setHover(null); }, 250);
-    }
-    page.setSection(id);
+      setHover(p); clearTimeout(flashTimer); flashTimer = setTimeout(function () { setHover(NONE); }, 250);
+    } else setHover(NONE);
+    if (hint) hint.textContent = HINT_HOME;  /* the page opens over the rider's view */
+    page.setSection(act.open);
   }
   canvas.addEventListener('pointerup', function (e) { endDrag(e, false); });
   canvas.addEventListener('pointercancel', function (e) { endDrag(e, true); });
-  canvas.addEventListener('pointerleave', function () { if (!view.drag) setHover(null); });
+  canvas.addEventListener('pointerleave', function () { if (!view.drag) setHover(NONE); });
+  /* Escape close to the screen goes back to the rider's view (a page or the credits, if open, take Escape first) */
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && view.cur === 'tft' && page.state.section === 'home') goBack();
+  });
 
   /* arrow keys turn the view; Home recentres */
   function nudge(dy, dp) {
