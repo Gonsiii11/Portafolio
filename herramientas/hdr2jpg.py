@@ -1,4 +1,7 @@
-"""Radiance .hdr (RLE RGBE) -> tonemapped sRGB JPG.  usage: hdr2jpg.py in.hdr out.jpg [exposure] [width]"""
+"""Radiance .hdr (RLE RGBE) -> tonemapped sRGB JPG.
+usage: hdr2jpg.py in.hdr out.jpg [exposure] [width] [sun_u] [stretch] [top_deg]
+  sun_u    rotate so the brightest pixel (the sun) lands at this u (three.js: 0.25 = ahead, -Z)
+  stretch  magnify the band just above the horizon by this factor (taller mountains), easing out by top_deg"""
 import sys
 import numpy as np
 from PIL import Image
@@ -52,6 +55,20 @@ if sun_u is not None:
     W = lin.shape[1]
     lin = np.roll(lin, int(round(sun_u * W)) - sx, axis=1)
     print('sun at px', sx, sy, '-> u', sun_u, ' v', round(sy / lin.shape[0], 3))
+# optional vertical stretch of the band just above the horizon (makes distant mountains taller, leaves the zenith alone):
+# within [0, top] degrees of elevation the picture is magnified by `stretch` at the horizon, easing back to 1 at `top`.
+stretch = float(sys.argv[6]) if len(sys.argv) > 6 else 1.0
+top = float(sys.argv[7]) if len(sys.argv) > 7 else 40.0
+if stretch != 1.0:
+    H = lin.shape[0]
+    e_out = (0.5 - (np.arange(H) + 0.5) / H) * 180.0          # elevation of each output row, degrees
+    t = np.clip(e_out / top, 0, 1)
+    s = t * t * (3 - 2 * t)                                    # 0 at the horizon -> 1 at `top`
+    e_src = np.where((e_out > 0) & (e_out < top), e_out * (1 / stretch + (1 - 1 / stretch) * s), e_out)
+    y_src = np.clip((0.5 - e_src / 180.0) * H - 0.5, 0, H - 1)
+    y0 = np.floor(y_src).astype(int); y1 = np.minimum(y0 + 1, H - 1); f = (y_src - y0)[:, None, None]
+    lin = lin[y0] * (1 - f) + lin[y1] * f
+    print('stretch', stretch, 'up to', top, 'deg')
 rgb = aces(lin * exposure)
 srgb = np.where(rgb <= 0.0031308, rgb * 12.92, 1.055 * np.power(rgb, 1 / 2.4) - 0.055)
 im = Image.fromarray((srgb * 255 + 0.5).astype(np.uint8))

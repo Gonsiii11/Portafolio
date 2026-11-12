@@ -197,13 +197,19 @@ window.THREE = THREE;
     var mtn = new T.Mesh(new T.CylinderGeometry(300, 300, 36, 64, 1, true), new T.MeshBasicMaterial({ map: mtnTex, transparent: true, side: T.BackSide, fog: false, depthWrite: false }));
     mtn.position.y = GROUND + 14; scene.add(mtn);
 
-    /* real panorama (Poly Haven «Rolling Hills», CC0), pre-rotated so the sun sits ahead at u = 0.23.
+    /* real panorama (Poly Haven «Rolling Hills», CC0), pre-rotated so the mountain range lies ahead and the sun sits
+       behind on the left (u = 0.85), lighting the landscape from the side; the band above the horizon is stretched ×2.4 so the mountains stand taller
+       (herramientas/hdr2jpg.py rolling_hills_2k.hdr rolling_hills.jpg 1.0 2048 0.85 2.4 35).
        Until it loads (or if it fails) the painted sky above stays in place. */
     new T.TextureLoader().load('fondo/rolling_hills.jpg', function (tex) {
       tex.encoding = T.sRGBEncoding;
       tex.mapping = T.EquirectangularReflectionMapping;
-      scene.background = tex;
-      scene.remove(sky); scene.remove(mtn);
+      /* drawn on a sphere instead of scene.background so it skips the renderer's ACES tone mapping:
+         the JPG is already tone-mapped, and mapping it twice washed out the mountains.
+         scale.x = -1 and the half turn make the sphere's UVs match three.js equirect (u = 0.25 straight ahead) */
+      var pano = new T.Mesh(new T.SphereGeometry(650, 64, 32), new T.MeshBasicMaterial({ map: tex, side: T.BackSide, fog: false, depthWrite: false, toneMapped: false }));
+      pano.scale.x = -1; pano.rotation.y = Math.PI; pano.renderOrder = -2; scene.add(pano);
+      scene.remove(sky); scene.remove(mtn); scene.remove(sun);  /* the photo has its own sun */
       scene.fog.color.setHex(HAZE_DAY); scene.fog.near = 60; scene.fog.far = 600;
       ground.material.color.setHex(0xc9c4b4); ground.material.envMapIntensity = 0.3;
       try {
@@ -432,7 +438,7 @@ window.THREE = THREE;
     } catch (e) {}
 
     scene.add(new T.HemisphereLight(0x8aa0d8, 0x2a1a16, 0.6));
-    var sunLight = new T.DirectionalLight(0xff9a60, 1.2); sunLight.position.set(-6, 4, -20); scene.add(sunLight);
+    var sunLight = new T.DirectionalLight(0xff9a60, 1.2); sunLight.position.set(-12, 5, 16);  /* from the photo's sun, behind on the left */ scene.add(sunLight);
     var fill = new T.DirectionalLight(0xa8bcff, 0.9); fill.position.set(1.5, 6, 6); scene.add(fill);
     var dashLight = new T.PointLight(CYAN, 0.5, 0.9); dashLight.position.set(0, GROUND + 1.05, -0.35); scene.add(dashLight);
 
