@@ -10,7 +10,13 @@ Web personal en 3D para buscar prácticas. El visitante ve una moto en primera p
 
 ## Stack
 - Vite + JavaScript sin framework + Three.js **0.128.0 (fijada a propósito)**. El código usa APIs de esa versión (`outputEncoding`, `sRGBEncoding`). No subir de versión sin migrar el renderizado.
-- `index.html`: estructura y textos. `src/style.css`: estilos. `src/main.js`: lógica de la página y la escena 3D (función `initGL`).
+- `index.html`: estructura y textos. `src/style.css`: estilos. `src/main.js`: solo la entrada, que une página y escena.
+- `src/config.js`: colores, textos del cuadro y «reducir movimiento».
+- `src/pagina/`: lógica de la página, que funciona sin 3D (`pagina.js`: secciones, modos, «Ver la moto»; `creditos.js`).
+- `src/escena/`: la escena 3D. `escena.js` crea el renderizador, monta cada parte y lleva el bucle de fotogramas. `medidas.js` tiene las medidas compartidas (suelo, carretera, terreno y su altura `terH`), `carga.js` la carga por fases, `curvas.js` las curvas y `utiles.js` las texturas de canvas y sombras. Una parte por archivo: `cielo.js`, `luces.js`, `carretera.js`, `terreno.js` (con arcén e hierba), `mobiliario.js` (bionda e hitos), `bosque.js`, `rocas.js` y `deslizables.js` (lo que pasa al lado y vuelve atrás).
+- `src/moto/`: la moto, sus espejos, la pantalla y las zonas pulsables (`moto.js`) y el dibujo del cuadro (`tablero.js`).
+- `src/camara/`: vistas y encuadre (`camara.js`) y ratón, táctil y teclado (`controles.js`).
+- Cada parte de la escena es una función `createX(...)` que añade lo suyo a la escena y devuelve lo que el bucle necesita (normalmente `advance(step)` para avanzar con la moto).
 - `public/bike/`: moto convertida a un formato ligero propio (`bike.json` describe materiales y piezas, `bike.bin` la geometría cuantizada y comprimida con meshoptimizer, `tx/` las texturas). `bike.bin` se genera con `node herramientas/comprimir_moto.mjs` desde `modelos-fuente/moto/bike_raw.*` (sin comprimir), y el script verifica la descompresión con el decodificador de three r128.
 
 ## Cómo arrancar
@@ -25,7 +31,7 @@ npm run build    # genera dist/
 2. **Nada de la M 1000 R de Iván** (ni modelo ni fotos) por ahora; ese contenido se tratará aparte.
 3. Cualquier modelo 3D nuevo (por ejemplo una carretera) debe tener licencia que permita su uso y llevar su crédito.
    - Carretera: textura de «Street road» de saifurrehman (https://sketchfab.com/3d-models/street-road-a01b47f299b24ac99a1dcd8e2111364b), CC BY 4.0. Solo se usa la textura del asfalto (`public/carretera/asfalto.webp`); crédito en `#credit`, `#pcredit` y `#credits`, licencia en `public/carretera/LICENSE-modelo.txt`.
-   - Fondo: panorama «Rolling Hills» de Poly Haven (CC0, no exige crédito), convertido desde el HDR de 4k con `herramientas/hdr2jpg.py` a un maestro sin pérdidas (`modelos-fuente/fondo/rolling_hills_4096.png`, girado y con el horizonte estirado; el comando exacto está en `main.js`) y de ahí a `public/fondo/cielo_1k/2k/4k.webp`.
+   - Fondo: panorama «Rolling Hills» de Poly Haven (CC0, no exige crédito), convertido desde el HDR de 4k con `herramientas/hdr2jpg.py` a un maestro sin pérdidas (`modelos-fuente/fondo/rolling_hills_4096.png`, girado y con el horizonte estirado; el comando exacto está en `src/escena/cielo.js`) y de ahí a `public/fondo/cielo_1k/2k/4k.webp`.
    - Pinos: «Scots Pine Trees Set» de Maksim Batyrev (https://sketchfab.com/3d-models/scots-pine-trees-set-422b961ff3d14e7baa7e9077572b2247), CC BY 4.0. En `public/pinos/` con texturas reducidas en WebP y follaje engrosado (`herramientas/reducir_pinos.py`); en la escena se dibujan como instancias (un bloque de 360 m que se repite, unos 760 pinos en escritorio y 300 en móvil); crédito en `#credit`, `#pcredit` y `#credits`.
    - Terreno: textura «Aerial Grass Rock» de Poly Haven (CC0, no exige crédito) en `public/terreno/hierba_*.webp` y `hierba_normal_*.webp`; tierra del arcén «Stony Dirt Path» (Poly Haven, CC0) en `grava_*.webp`. Las matas de hierba se generan por código; nota en `public/terreno/LICENSE.txt`.
    - Relieve del asfalto: mapa de normales de «Clean Asphalt» de Poly Haven (CC0) en `public/carretera/asfalto_normal.webp`; nota en `public/carretera/LICENSE-asfalto-normal.txt`.
@@ -38,17 +44,16 @@ npm run build    # genera dist/
 1. Rellenar Contacto (email, LinkedIn, GitHub, enlace al CV) y los proyectos reales.
 2. Inclinación del móvil para mirar alrededor (`DeviceOrientationEvent`; en iPhone pide permiso con `requestPermission` desde un toque).
 3. Paisaje de sierra con pinos (rama `paisaje/*`): hechos el fondo, el asfalto, los pinos, el terreno a los lados, las rocas y el mobiliario de carretera (hitos de arista y bionda, hechos con geometría propia en lugar de las farolas).
-4. Separar `main.js` en módulos (escena, moto, interfaz, datos de proyectos).
-5. Probar en móvil y escritorio, y mirar el rendimiento.
-6. Publicar en Vercel o Netlify.
+4. Probar en móvil y escritorio, y mirar el rendimiento.
+5. Publicar (GitHub Pages, Vercel o Netlify).
 
 ## Curvas (no romper)
-- La escena se construye recta y se curva en el sombreado de vértices (ver «curves» en `main.js`): cada punto se desplaza de lado según `X(s+d) − X(s) − X'(s)·d` y el mundo se inclina con la moto en las curvas. `bendScene()` aplica la curva cada fotograma a todo lo que no es la moto, incluidas las sombras.
+- La escena se construye recta y se curva en el sombreado de vértices (ver `src/escena/curvas.js`): cada punto se desplaza de lado según `X(s+d) − X(s) − X'(s)·d` y el mundo se inclina con la moto en las curvas. `bendScene()` aplica la curva cada fotograma a todo lo que no es la moto, incluidas las sombras.
 - Toda malla larga necesita vértices a lo largo (cada pocos metros) para poder curvarse: una malla de solo dos triángulos se queda recta.
 - Lo que no deba curvarse ni inclinarse lleva `userData.noBend` (el panorama: cielo y montañas del fondo quedan casi fijos, a petición de Iván). Lo que solo deba inclinarse, `userData.bendAmt = 0`.
 
 ## Carga por fases (no romper)
-- La web carga en tres fases para que la primera vista sea ligera (ver «loading in phases» en `main.js`): 1) moto, asfalto y cielo de 1k; 2) cuando la moto (y sus texturas) están listas, terreno pequeño, pinos y rocas; 3) con el navegador libre, texturas grandes. `TIER` 1 (pantallas táctiles, ahorro de datos, 2g/3g) tiene techos más bajos.
+- La web carga en tres fases para que la primera vista sea ligera (ver `src/escena/carga.js`): 1) moto, asfalto y cielo de 1k; 2) cuando la moto (y sus texturas) están listas, terreno pequeño, pinos y rocas; 3) con el navegador libre, texturas grandes. `TIER` 1 (pantallas táctiles, ahorro de datos, 2g/3g) tiene techos más bajos.
 - Las texturas se sirven en WebP en varios tamaños, generadas con `herramientas/variantes_web.py` desde los originales de `modelos-fuente/`. Cualquier textura nueva entra por `loadTiered` y con sus variantes.
 - Lo nuevo de la escena debe ser procedural o instanciado siempre que se pueda (como la hierba), para no sumar descarga.
 
