@@ -620,7 +620,16 @@ window.THREE = THREE;
           if (merged) list.push([merged, mats[mn]]); else geos.forEach(function (g) { list.push([g, mats[mn]]); });
         });
         list.forEach(function (p) { p[0].computeBoundingBox(); box.union(p[0].boundingBox); });
-        var c = box.getCenter(new T.Vector3()), s = 1 / (box.max.y - box.min.y);
+        /* pivot = centre of the trunk's lowest ring (not the box centre: some trees lean), so the trunk stands where placed */
+        var c = box.getCenter(new T.Vector3()), trunk = list.filter(function (p) { return p[1].name === 'Mat_Trunk'; })[0];
+        if (trunk) {
+          var pa = trunk[0].attributes.position, lo = Infinity, sx = 0, sz = 0, nb = 0, q0;
+          for (q0 = 0; q0 < pa.count; q0++) lo = Math.min(lo, pa.getY(q0));
+          var tol = (box.max.y - box.min.y) * 0.01;
+          for (q0 = 0; q0 < pa.count; q0++) if (pa.getY(q0) < lo + tol) { sx += pa.getX(q0); sz += pa.getZ(q0); nb++; }
+          if (nb) { c.x = sx / nb; c.z = sz / nb; }
+        }
+        var s = 1 / (box.max.y - box.min.y);
         var mtx = new T.Matrix4().makeScale(s, s, s).multiply(new T.Matrix4().makeTranslation(-c.x, -box.min.y, -c.z));
         list.forEach(function (p) {
           p[0].applyMatrix4(mtx);
@@ -649,7 +658,9 @@ window.THREE = THREE;
         if (Math.random() > dens) continue;
         var id = pool[Math.floor(Math.random() * pool.length)], band = d < 32 ? 'near' : 'far';
         var h = 8 + Math.random() * 7 + (d > 40 ? 3 : 0);  /* metres tall */
-        var y = terH(x, z + zToTer) - 0.15;
+        /* ground level (GROUND + terrain height), taken as the lowest point within ~0.6 m of the trunk so a tree on a slope
+           never shows air under its downhill side; then sunk 0.2 m into the soil */
+        var y = GROUND + Math.min(terH(x, z + zToTer), terH(x + 0.6, z + zToTer), terH(x - 0.6, z + zToTer), terH(x, z + zToTer + 0.6), terH(x, z + zToTer - 0.6)) - 0.2;
         (placed[band][id] = placed[band][id] || []).push([x, y, z, h, Math.random() * Math.PI * 2]);
         n++;
       }
