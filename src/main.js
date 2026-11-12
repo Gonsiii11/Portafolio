@@ -1190,9 +1190,11 @@ window.THREE = THREE;
       }
 
       if (!reduce) grassTime.value = now / 1000;
-      /* lean into the bend: atan(v²·curvature / g), capped, eased */
-      var leanT = Math.max(-0.32, Math.min(0.32, Math.atan(speed * speed * curveD2(curveU.value) / 9.81)));
-      leanU.value += (leanT - leanU.value) * (1 - Math.exp(-dt * 3));
+      /* a hint of lean into the bend: a third of the physical angle atan(v²·curvature / g), capped at ~4°, eased slowly,
+         so the horizon tilts a little instead of swinging the whole background around */
+      var LEAN_SHARE = 0.33, LEAN_MAX = 0.07;
+      var leanT = Math.max(-LEAN_MAX, Math.min(LEAN_MAX, LEAN_SHARE * Math.atan(speed * speed * curveD2(curveU.value) / 9.81)));
+      leanU.value += (leanT - leanU.value) * (1 - Math.exp(-dt * 1.5));
       bendScene();
       sunLight.target.position.set(camera.position.x, GROUND, camera.position.z - 18);
       sunLight.position.copy(sunLight.target.position).addScaledVector(SUN_DIR, 80);
