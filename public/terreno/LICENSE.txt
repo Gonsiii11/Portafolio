@@ -6,3 +6,12 @@ Textura del terreno:
 
 Cambios para esta web: mapa de color (`hierba.jpg`) y mapa de normales OpenGL (`hierba_normal.jpg`) a 2048 px.
 Una baldosa equivale a 15 × 15 m.
+
+Tierra del arcén (`grava.jpg`):
+* título:	Stony Dirt Path
+* fuente:	https://polyhaven.com/a/stony_dirt_path
+* autor:	eye-candy.xyz (Poly Haven)
+* licencia:	CC0 1.0 (dominio público, no exige crédito)
+Cambios para esta web: solo el mapa de color a 1024 px; en el sombreado se desatura y aclara para que parezca tierra seca.
+
+Las matas de hierba no usan ningún recurso externo: se generan por código en src/main.js.
