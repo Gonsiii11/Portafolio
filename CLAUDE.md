@@ -28,6 +28,7 @@ npm run build    # genera dist/
    - Fondo: panorama «Rolling Hills» de Poly Haven (CC0, no exige crédito), convertido con `herramientas/hdr2jpg.py` a `public/fondo/rolling_hills.jpg`.
    - Pinos: «Scots Pine Trees Set» de Maksim Batyrev (https://sketchfab.com/3d-models/scots-pine-trees-set-422b961ff3d14e7baa7e9077572b2247), CC BY 4.0. En `public/pinos/` con texturas reducidas y follaje engrosado (`herramientas/reducir_pinos.py`); crédito en `#credit` y `#pcredit`.
    - Terreno: textura «Aerial Grass Rock» de Poly Haven (CC0, no exige crédito) en `public/terreno/hierba.jpg`; nota en `public/terreno/LICENSE.txt`.
+   - Rocas: «Namaqualand Boulder 04» y «05» de Poly Haven (CC0, no exige crédito), simplificadas con `herramientas/reducir_rocas.sh` a `public/rocas/granito_a.glb` y `granito_b.glb`; nota en `public/rocas/LICENSE.txt`.
    - Los originales descargados van en `modelos-fuente/` (fuera de git).
 4. Accesible y responsive: tiene que funcionar a 400 px de ancho, respetar `prefers-reduced-motion` y tener la versión sin 3D (`#nogl`).
 5. Los datos de contacto y proyectos entre corchetes `[...]` son huecos por rellenar: no sustituirlos por datos inventados.
@@ -35,7 +36,7 @@ npm run build    # genera dist/
 ## Pendiente (por orden)
 1. Rellenar Contacto (email, LinkedIn, GitHub, enlace al CV) y los proyectos reales.
 2. Inclinación del móvil para mirar alrededor (`DeviceOrientationEvent`; en iPhone pide permiso con `requestPermission` desde un toque).
-3. Paisaje de sierra con pinos (rama `paisaje/*`): hechos el fondo, el asfalto, los pinos y el terreno a los lados; faltan las rocas y cambiar las farolas.
+3. Paisaje de sierra con pinos (rama `paisaje/*`): hechos el fondo, el asfalto, los pinos, el terreno a los lados y las rocas; falta cambiar las farolas.
 4. Separar `main.js` en módulos (escena, moto, interfaz, datos de proyectos).
 5. Probar en móvil y escritorio, y mirar el rendimiento.
 6. Publicar en Vercel o Netlify.

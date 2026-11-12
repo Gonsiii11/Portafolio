@@ -1,0 +1,7 @@
+Rocas (bolos de granito):
+* granito_a.glb  <- «Namaqualand Boulder 04», Jenelle van Heerden (Poly Haven) — https://polyhaven.com/a/namaqualand_boulder_04
+* granito_b.glb  <- «Namaqualand Boulder 05», Jenelle van Heerden y Dario Barresi (Poly Haven) — https://polyhaven.com/a/namaqualand_boulder_05
+* licencia:	CC0 1.0 (dominio público, no exige crédito) — https://creativecommons.org/publicdomain/zero/1.0/
+
+Cambios para esta web: geometría simplificada (≈4.700 y ≈7.200 triángulos) y texturas a 512 px,
+con herramientas/reducir_rocas.sh.
