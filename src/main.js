@@ -169,6 +169,33 @@ window.THREE = THREE;
     }
     renderer.setClearColor(0x0B0D10, 1);
 
+    /* ---------- loading in phases, so the first view stays light ----------
+       1) straight away: the bike (loadBike), the asphalt and a 1k sky (52 KB);
+       2) once the bike is on screen: terrain, pines and rocks, textures in small sizes;
+       3) when the browser is idle: the large textures swap in.
+       TIER 1 (touch screens, data saver, 2g/3g) stops at smaller "large" sizes than TIER 2 (desktop).
+       Texture variants are WebP, made by herramientas/variantes_web.py. */
+    var conn = navigator.connection || {};
+    var TIER = (LOW_GPU || conn.saveData || /2g|3g/.test(conn.effectiveType || '')) ? 1 : 2;
+    var whenIdle = window.requestIdleCallback ? function (f) { window.requestIdleCallback(f, { timeout: 3000 }); } : function (f) { setTimeout(f, 500); };
+    var bikeShown, afterBike = new Promise(function (r) { bikeShown = r; });
+    setTimeout(function () { bikeShown(); }, 8000);  /* a very slow bike must not hold the scenery back forever */
+    var texLoader = new T.TextureLoader(), MAX_ANISO = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    function loadTex(url, srgb, cb) {
+      texLoader.load(url, function (t) {
+        if (srgb) t.encoding = T.sRGBEncoding;
+        t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = MAX_ANISO;
+        cb(t);
+      });
+    }
+    /* small (now, or after the bike if `late`) then large (when idle after the bike); a late small never replaces a large */
+    function loadTiered(small, large, srgb, apply, late) {
+      var cur = null, rank = -1;
+      function use(r) { return function (t) { if (r < rank) { t.dispose(); return; } var old = cur; cur = t; rank = r; apply(t); if (old) old.dispose(); }; }
+      if (small) { if (late) afterBike.then(function () { loadTex(small, srgb, use(0)); }); else loadTex(small, srgb, use(0)); }
+      if (large) afterBike.then(function () { whenIdle(function () { loadTex(large, srgb, use(1)); }); });
+    }
+
     var GROUND = -0.97, HAZE = 0x6a3b3f, HAZE_DAY = 0x8a8170;
     var scene = new T.Scene();
     scene.fog = new T.Fog(HAZE, 30, 260);
@@ -216,21 +243,22 @@ window.THREE = THREE;
 
     /* real panorama (Poly Haven «Rolling Hills», CC0), pre-rotated so the mountain range lies ahead and the sun sits
        behind on the left (u = 0.85), lighting the landscape from the side; the band above the horizon is stretched ×2.4 so the mountains stand taller
-       (herramientas/hdr2jpg.py rolling_hills_4k.hdr rolling_hills.jpg 1.0 4096 0.85 2.4 35).
+       (master: herramientas/hdr2jpg.py rolling_hills_4k.hdr rolling_hills_4096.png 1.0 4096 0.85 2.4 35, then variantes_web.py).
        Until it loads (or if it fails) the painted sky above stays in place. */
-    new T.TextureLoader().load('fondo/rolling_hills.jpg', function (tex) {
-      tex.encoding = T.sRGBEncoding;
+    var pano = null;
+    loadTiered('fondo/cielo_1k.webp', TIER > 1 ? 'fondo/cielo_4k.webp' : 'fondo/cielo_2k.webp', true, function (tex) {
       tex.mapping = T.EquirectangularReflectionMapping;
-      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      tex.wrapT = T.ClampToEdgeWrapping;
+      if (pano) { pano.material.map = tex; pano.material.needsUpdate = true; return; }  /* the larger sky just swaps in */
       /* drawn on a sphere instead of scene.background so it skips the renderer's ACES tone mapping:
-         the JPG is already tone-mapped, and mapping it twice washed out the mountains.
+         the image is already tone-mapped, and mapping it twice washed out the mountains.
          scale.x = -1 and the half turn make the sphere's UVs match three.js equirect (u = 0.25 straight ahead) */
-      var pano = new T.Mesh(new T.SphereGeometry(650, 64, 32), new T.MeshBasicMaterial({ map: tex, side: T.BackSide, fog: false, depthWrite: false, toneMapped: false }));
+      pano = new T.Mesh(new T.SphereGeometry(650, 64, 32), new T.MeshBasicMaterial({ map: tex, side: T.BackSide, fog: false, depthWrite: false, toneMapped: false }));
       pano.scale.x = -1; pano.rotation.y = Math.PI; pano.renderOrder = -2; scene.add(pano);
       scene.remove(sky); scene.remove(mtn); scene.remove(sun);  /* the photo has its own sun */
       scene.fog.color.setHex(HAZE_DAY); scene.fog.near = 60; scene.fog.far = 600;
       ground.material.color.setHex(0xc9c4b4); ground.material.envMapIntensity = 0.3;
-      try {
+      try {  /* reflections come from the small sky: plenty for blurred lighting, and cheap */
         var pmE = new T.PMREMGenerator(renderer);
         scene.environment = pmE.fromEquirectangular(tex).texture;
         pmE.dispose();
@@ -256,27 +284,22 @@ window.THREE = THREE;
 
     /* real asphalt: texture from «Street road» by saifurrehman (CC BY 4.0), rotated so the lanes run along v.
        One tile = 28 m of road. Swaps in when loaded; the painted road stays if it fails. */
-    new T.TextureLoader().load('carretera/asfalto.jpg', function (tex) {
-      tex.encoding = T.sRGBEncoding;
-      tex.wrapS = tex.wrapT = T.RepeatWrapping;
-      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    loadTex('carretera/asfalto.webp', true, function (tex) {
       PERIOD = 28;
       tex.repeat.set(1, ROAD_LEN / PERIOD);
       tex.offset.y = roadTex.offset.y;
       road.material.map = tex; road.material.needsUpdate = true;
-      /* fine relief: «Clean Asphalt» normal map (Poly Haven, CC0), sampled at its real size (~2.1 m a tile)
-         on top of the UVs the colour map scrolls with: 7 m / 2.1 = 3.33 across, 28 m / 2.1 = 13.3 along one tile */
-      new T.TextureLoader().load('carretera/asfalto_normal.jpg', function (nt) {
-        nt.wrapS = nt.wrapT = T.RepeatWrapping;
-        nt.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-        road.material.normalMap = nt; road.material.normalScale.set(0.9, 0.9);
-        road.material.onBeforeCompile = function (sh) {
-          sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>',
-            T.ShaderChunk.normal_fragment_maps.replace(/texture2D\( normalMap, vUv \)/g, 'texture2D( normalMap, vUv * vec2( 3.33, 13.3 ) )'));
-        };
-        road.material.needsUpdate = true;
-      });
       roadTex.dispose(); roadTex = tex;
+    });
+    /* fine relief (phase 3): «Clean Asphalt» normal map (Poly Haven, CC0), sampled at its real size (~2.1 m a tile)
+       on top of the UVs the colour map scrolls with: 7 m / 2.1 = 3.33 across, 28 m / 2.1 = 13.3 along one tile */
+    loadTiered(null, 'carretera/asfalto_normal.webp', false, function (nt) {
+      road.material.normalMap = nt; road.material.normalScale.set(0.9, 0.9);
+      road.material.onBeforeCompile = function (sh) {
+        sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>',
+          T.ShaderChunk.normal_fragment_maps.replace(/texture2D\( normalMap, vUv \)/g, 'texture2D( normalMap, vUv * vec2( 3.33, 13.3 ) )'));
+      };
+      road.material.needsUpdate = true;
     });
     /* terrain: a flat shoulder beside the road, then banks and rolling ground rising to both sides.
        Heights repeat every TER_P metres along z, so the mesh slides with the road and jumps back one period.
@@ -305,16 +328,11 @@ window.THREE = THREE;
     })();
     var ground = new T.Mesh(terGeo, new T.MeshStandardMaterial({ color: 0x0e1511, roughness: 1, metalness: 0 }));
     ground.position.set(0, GROUND, TER_Z0); ground.receiveShadow = true; scene.add(ground);
-    new T.TextureLoader().load('terreno/hierba.jpg', function (tex) {
-      tex.encoding = T.sRGBEncoding;
-      tex.wrapS = tex.wrapT = T.RepeatWrapping;
-      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    loadTiered('terreno/hierba_512.webp', TIER > 1 ? 'terreno/hierba_2k.webp' : 'terreno/hierba_1k.webp', true, function (tex) {
       ground.material.map = tex; ground.material.needsUpdate = true;
-    });
-    /* relief: the texture's own normal map (Poly Haven, CC0) */
-    new T.TextureLoader().load('terreno/hierba_normal.jpg', function (tex) {
-      tex.wrapS = tex.wrapT = T.RepeatWrapping;
-      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    }, true);
+    /* relief (phase 3 only): the texture's own normal map (Poly Haven, CC0) */
+    loadTiered(null, TIER > 1 ? 'terreno/hierba_normal_2k.webp' : 'terreno/hierba_normal_1k.webp', false, function (tex) {
       ground.material.normalMap = tex; ground.material.normalScale.set(1.2, 1.2); ground.material.needsUpdate = true;
     });
     /* terrain shading:
@@ -322,11 +340,7 @@ window.THREE = THREE;
        - shoulder: within ~1.5 m of the asphalt the grass gives way to dusty dirt with stones («Stony Dirt Path», Poly Haven, CC0),
          with a ragged edge driven by the grass texture itself. Terrain x is world x (the mesh only moves along z). */
     var gravelU = { value: new T.DataTexture(new Uint8Array([120, 100, 80, 255]), 1, 1) };
-    new T.TextureLoader().load('terreno/grava.jpg', function (tex) {
-      tex.encoding = T.sRGBEncoding; tex.wrapS = tex.wrapT = T.RepeatWrapping;
-      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-      gravelU.value = tex;
-    });
+    loadTiered('terreno/grava_512.webp', TIER > 1 ? 'terreno/grava_1k.webp' : null, true, function (tex) { gravelU.value = tex; }, true);
     ground.material.onBeforeCompile = function (sh) {
       sh.uniforms.uGravel = gravelU;
       sh.vertexShader = 'varying float vTerX;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vTerX = position.x;');
@@ -468,7 +482,7 @@ window.THREE = THREE;
     /* Scots pines («Scots Pine Trees Set» by Maksim Batyrev, CC BY 4.0). The set has 9 trees laid out on a grid;
        each one is baked to its own geometry (one per material), stood on y = 0 and scaled to 1 m tall,
        then every placeholder cone is swapped for a random pine. If loading fails, the cones stay. */
-    new GLTFLoader().load('pinos/scene.gltf', function (gltf) {
+    afterBike.then(function () { new GLTFLoader().load('pinos/scene.gltf', function (gltf) {  /* phase 2 */
       gltf.scene.updateMatrixWorld(true);
       var parts = {}, mats = {};
       gltf.scene.traverse(function (o) {
@@ -510,20 +524,20 @@ window.THREE = THREE;
         g.position.set(pr.obj.position.x, groundY(pr.obj.position.x, pr.obj.position.z) - 0.15, pr.obj.position.z);
         scene.remove(pr.obj); shadowsOn(g); scene.add(g); pr.obj = g; pr.lift = -0.15;
       });
-    });
+    }); });
 
     /* granite boulders («Namaqualand Boulder 04/05», Poly Haven, CC0), simplified with herramientas/reducir_rocas.sh.
        Scattered past the shoulder, half sunk into the ground, sliding past like the pines. */
     (function () {
       var files = ['rocas/granito_a.glb', 'rocas/granito_b.glb'], kinds = [], left = files.length;
-      files.forEach(function (f, n) {
+      afterBike.then(function () { files.forEach(function (f, n) {  /* phase 2 */
         new GLTFLoader().load(f, function (gltf) {
           gltf.scene.traverse(function (o) {
             if (o.isMesh && !kinds[n]) { o.material.envMapIntensity = 0.4; o.material.color.setHex(0xa8a196); kinds[n] = { geo: o.geometry, mat: o.material }; }
           });
           if (--left === 0) place();
         }, undefined, function () { if (--left === 0) place(); });
-      });
+      }); });
       function place() {
         kinds = kinds.filter(Boolean);
         if (!kinds.length) return;
@@ -639,10 +653,11 @@ window.THREE = THREE;
     var rig = new T.Group(); scene.add(rig);
     var bike = new T.Group(); bike.position.y = BY; rig.add(bike);
     var texCache = {};
+    var bikeMgr = new T.LoadingManager(function () { bikeShown(); });  /* phase 2 starts when the bike's textures are in too */
     function bikeTex(f) {
       if (!f) return null;
       if (texCache[f]) return texCache[f];
-      var t = new T.TextureLoader().load('bike/tx/' + f);
+      var t = new T.TextureLoader(bikeMgr).load('bike/tx/' + f);
       t.encoding = T.sRGBEncoding; t.flipY = false; t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 4;
       return (texCache[f] = t);
     }
@@ -712,7 +727,7 @@ window.THREE = THREE;
       }).then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
         buildBike(meta, buf); bikeReady = true;
         var ld = document.getElementById('loading'); if (ld) ld.hidden = true;
-      }).catch(function () { var ld = document.getElementById('loading'); if (ld) ld.textContent = 'No se pudo cargar el modelo de la moto.'; });
+      }).catch(function () { bikeShown(); var ld = document.getElementById('loading'); if (ld) ld.textContent = 'No se pudo cargar el modelo de la moto.'; });
     }
     loadBike();
 

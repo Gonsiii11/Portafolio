@@ -1,7 +1,7 @@
-Relieve fino del asfalto (`asfalto_normal.jpg`):
+Relieve fino del asfalto (`asfalto_normal.webp`):
 * título:	Clean Asphalt
 * fuente:	https://polyhaven.com/a/clean_asphalt
 * autor:	Dimitrios Savva (Poly Haven)
 * licencia:	CC0 1.0 (dominio público, no exige crédito) — https://creativecommons.org/publicdomain/zero/1.0/
 
-Cambios para esta web: solo el mapa de normales OpenGL a 1024 px. El color sigue siendo el de «Street road» (ver LICENSE-modelo.txt).
+Cambios para esta web: solo el mapa de normales OpenGL a 1024 px, en WebP. El color sigue siendo el de «Street road» (ver LICENSE-modelo.txt).
