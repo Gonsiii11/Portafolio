@@ -68,13 +68,6 @@ h1 em { font-style: normal; color: var(--accent); }
 @media (max-width: 899px) { .lead { display: none; } #hero { max-width: none; } }
 @media (max-width: 399px) { #credit { white-space: normal; border-radius: 14px; } }
 
-/* pins over the 3D controls */
-#pins { position: absolute; inset: 0; pointer-events: none; overflow: hidden; transition: opacity 0.3s; }
-#pins.off { opacity: 0; }
-#pins.off .pin { pointer-events: none; }
-.pin { position: absolute; left: 0; top: 0; pointer-events: auto; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--glass); color: var(--fg); font: 600 13px var(--font-body); cursor: pointer; white-space: nowrap; transform: translate(-9999px, -9999px); backdrop-filter: blur(6px); }
-.pin .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pulse 2.2s infinite; }
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 11px transparent; } }
 
 /* section panel: side card on wide screens, bottom sheet on phones */
 #panel { position: absolute; z-index: 5; display: flex; flex-direction: column; box-sizing: border-box; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line); backdrop-filter: blur(14px); transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); outline: none; }

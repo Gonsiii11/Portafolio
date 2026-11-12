@@ -4,7 +4,6 @@ import { LABELS } from '../config.js';
 
 export function createPage() {
   var panel = document.getElementById('panel');
-  var pinsEl = document.getElementById('pins');
   var hero = document.getElementById('hero');
   var hint = document.getElementById('hint');
   var extBtn = document.getElementById('extbtn');
@@ -28,7 +27,6 @@ export function createPage() {
     setSection('home', { focus: false });
     extOn = (force === undefined) ? !was : force;
     if (gl) gl.setExt(extOn);
-    pinsEl.classList.toggle('off', extOn);
     extBtn.textContent = extOn ? 'Volver al asiento' : 'Ver la moto';
     extBtn.setAttribute('aria-current', extOn ? 'true' : 'false');
   }
@@ -47,7 +45,6 @@ export function createPage() {
     hint.hidden = open || !gl;
     document.getElementById('credit').hidden = open;
     extBtn.hidden = !gl;
-    pinsEl.classList.toggle('off', open);
     extOn = false; extBtn.textContent = 'Ver la moto';
     if (open) {
       document.getElementById('pbody').scrollTop = 0;
@@ -73,6 +70,6 @@ export function createPage() {
     toggleExt: toggleExt,
     setGL: function (g) { gl = g; },
     /* no WebGL: show the plain-text notice instead of the scene */
-    showNoGL: function () { document.getElementById('nogl').hidden = false; pinsEl.hidden = true; }
+    showNoGL: function () { document.getElementById('nogl').hidden = false; }
   };
 }

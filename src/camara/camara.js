@@ -1,6 +1,5 @@
 /* Camera: the views (the rider's eyes, close-ups of the controls, the bike from outside), how each is framed in the
-   part of the screen the page leaves free, and the HTML pins that sit over the controls. The shared `view` state is
-   also driven by controles.js. */
+   part of the screen the page leaves free. The shared `view` state is also driven by controles.js. */
 import * as T from 'three';
 import { reduce, clamp } from '../config.js';
 import { W3 } from '../moto/moto.js';
@@ -14,18 +13,16 @@ var VIEWS = {
   ext: { t: W3([0, 0.32, 0.01]), w: 2.5, h: 1.3, d: [0.55, 0.3, 0.8] },
   tank: { t: W3([0, 0.44, -0.12]), w: 0.6, h: 0.45, d: [0, 0.8, 0.6] }
 };
-var PIN_POS = { about: W3([0.003, 0.54, -0.55]), projects: W3([-0.265, 0.57, -0.48]), contact: W3([0.265, 0.57, -0.48]), ext: W3([0, 0.5, -0.1]) };
 
 export function createCamera(renderer, rig) {
   var app = document.getElementById('app');
   var camera = new T.PerspectiveCamera(55, 1, 0.02, 700);
-  var pinEls = Array.prototype.slice.call(document.querySelectorAll('.pin'));
   /* shared with the controls: which view, where the rider is looking, whether the bike is shown from outside */
   var view = { cur: 'home', ext: false, yaw: 0, pitch: 0, yawT: 0, pitchT: 0, spinT: 0, lastInteract: 0, speedT: 16, drag: null };
   var size = { w: 1, h: 1 }, portraitMix = 0;
   var offX = 0, offY = 0, first = true;
   var camTgt = new T.Vector3(), camPos = new T.Vector3(), desTgt = new T.Vector3(), desPos = new T.Vector3();
-  var eye = new T.Vector3(), tg = new T.Vector3(), fwd = new T.Vector3(), rightV = new T.Vector3(), O = new T.Vector3(), V = new T.Vector3();
+  var eye = new T.Vector3(), tg = new T.Vector3(), fwd = new T.Vector3(), rightV = new T.Vector3(), O = new T.Vector3();
   var X_AXIS = new T.Vector3(1, 0, 0), Y_AXIS = new T.Vector3(0, 1, 0);
 
   /* the part of the screen the scene should frame its subject in (the hero text and the section panel take the rest) */
@@ -87,21 +84,10 @@ export function createCamera(renderer, rig) {
     camera.setViewOffset(W, H, offX, offY, W, H);
   }
 
-  /* the HTML pins follow the controls they label (only in the rider's view) */
-  function updatePins() {
-    if (view.cur !== 'home') return;
-    for (var n = 0; n < pinEls.length; n++) {
-      var pp = PIN_POS[pinEls[n].dataset.go]; V.set(pp[0], pp[1], pp[2]).project(camera);
-      var sx = (V.x * 0.5 + 0.5) * size.w, sy = (-V.y * 0.5 + 0.5) * size.h;
-      pinEls[n].style.transform = 'translate(' + sx.toFixed(1) + 'px,' + sy.toFixed(1) + 'px) translate(-50%,-50%)';
-    }
-  }
-
   return {
     camera: camera,
     view: view,
     update: update,
-    updatePins: updatePins,
     setExt: function (on) {
       view.ext = !!on; view.yawT = 0; view.pitchT = view.ext ? 0.08 : 0; view.lastInteract = performance.now();
       if (view.ext) { view.cur = 'ext'; view.speedT = 0; view.spinT = -0.5; } else { view.cur = 'home'; view.speedT = 16; view.spinT = rig.rotation.y = 0; }

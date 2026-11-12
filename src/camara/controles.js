@@ -1,37 +1,27 @@
-/* Input: drag to look around (or spin the bike when seen from outside), tap or click a control to open its section,
-   hover to make it glow; arrow keys turn the view and Home recentres it. */
+/* Input: drag to look around (or spin the bike when seen from outside); tap or click a row of the TFT menu to open
+   its section, hover it to light it up; arrow keys turn the view and Home recentres it. */
 import * as T from 'three';
-import { reduce, clamp } from '../config.js';
+import { clamp } from '../config.js';
+import { tftHit } from '../moto/tft.js';
 
 export function createControls(canvas, cam, bike, page) {
   var camera = cam.camera, view = cam.view;
-  var ray = new T.Raycaster(), ndc = new T.Vector2(), hoverMesh = null;
+  var ray = new T.Raycaster(), ndc = new T.Vector2(), hoverId = null, flashTimer = 0;
 
+  /* the TFT menu row under a screen point ('about' | 'projects' | 'contact'), or null */
   function pick(cx, cy) {
     if (view.ext) return null;
     var r = canvas.getBoundingClientRect();
     ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    var hits = ray.intersectObjects(bike.hot, false);
-    return hits.length ? hits[0].object : null;
+    var hit = ray.intersectObject(bike.screen, false)[0];
+    return hit && hit.uv ? tftHit(hit.uv.x, hit.uv.y) : null;
   }
-  function setHover(mesh) {
-    if (mesh === hoverMesh) return;
-    hoverMesh = mesh;
-    var gid = mesh ? mesh.userData.gid : null;
-    for (var id in bike.groups) bike.groups[id].t = (id === gid) ? 1 : 0;
-    canvas.style.cursor = view.drag ? 'grabbing' : (mesh ? 'pointer' : 'grab');
-  }
-  function activate(mesh) {
-    if (!mesh) return;
-    var u = mesh.userData;
-    if (u.isExt) { page.toggleExt(true); return; }
-    if (u.isStart) {  /* the start button: the needle revs, then Contact opens */
-      page.state.boot = true; bike.dash.revT = 0.98; bike.dash.dirty = true;
-      setTimeout(function () { page.state.boot = false; page.setSection('contact'); }, reduce ? 0 : 650);
-      return;
-    }
-    page.setSection(u.section, { view: u.view });
+  function setHover(id) {
+    if (id === hoverId) return;
+    hoverId = id;
+    bike.setHover(id);
+    canvas.style.cursor = view.drag ? 'grabbing' : (id ? 'pointer' : 'grab');
   }
 
   canvas.addEventListener('pointerdown', function (e) {
@@ -59,8 +49,14 @@ export function createControls(canvas, cam, bike, page) {
   function endDrag(e, cancelled) {
     if (!view.drag || view.drag.id !== e.pointerId) return;
     var moved = view.drag.moved; view.drag = null;
-    canvas.style.cursor = hoverMesh ? 'pointer' : 'grab';
-    if (!moved && !cancelled) activate(pick(e.clientX, e.clientY));
+    canvas.style.cursor = hoverId ? 'pointer' : 'grab';
+    if (moved || cancelled) return;
+    var id = pick(e.clientX, e.clientY);
+    if (!id) return;
+    if (e.pointerType !== 'mouse') {  /* touch has no hover: light the row for a moment */
+      setHover(id); clearTimeout(flashTimer); flashTimer = setTimeout(function () { setHover(null); }, 250);
+    }
+    page.setSection(id);
   }
   canvas.addEventListener('pointerup', function (e) { endDrag(e, false); });
   canvas.addEventListener('pointercancel', function (e) { endDrag(e, true); });

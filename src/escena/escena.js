@@ -69,7 +69,6 @@ export function createScene(page) {
 
     cam.update(now, dt, speed);
     sky.update(camera);
-    bike.updateGlow(dt);
     bike.updateDash(dt, { speedMs: speed, travelledM: curves.travelled() });
 
     if (!reduce) terrain.setTime(now / 1000);
@@ -80,7 +79,6 @@ export function createScene(page) {
     bike.renderMirrors(renderer, scene);
     renderer.render(scene, camera);
 
-    cam.updatePins();
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

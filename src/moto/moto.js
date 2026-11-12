@@ -1,9 +1,8 @@
 /* ---------- the bike: BMW S1000RR 2019 (VTX, CC BY-NC-SA 4.0), baked to a light binary ----------
-   Model space: front = -z, wheels touch y = -0.482. Also here: the rear-view mirrors, the TFT dash screen and the
-   invisible hot spots over the real controls. */
+   Model space: front = -z, wheels touch y = -0.482. Also here: the rear-view mirrors and the TFT screen, which is
+   the touch menu (see tft.js and tablero.js). */
 import * as T from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import { ACCENT } from '../config.js';
 import { shadowsOn } from '../escena/utiles.js';
 import { BIKE_Y, LOW_GPU } from '../escena/medidas.js';
 import { drawDash } from './tablero.js';
@@ -114,35 +113,10 @@ export function createBike(scene, loader) {
   /* what the screen shows; `dirty` forces a redraw (hover change, fonts loaded), otherwise at most 15 redraws a second */
   var dash = { rpm: 1200, hover: null, dirty: true, since: 1, shown: '' };
 
-  /* invisible hot spots over the real controls; they glow on hover */
-  var hot = [], groups = {};
-  function hotspot(p, r, section, extra) {
-    var m = new T.Mesh(new T.SphereGeometry(r, 16, 12), new T.MeshBasicMaterial({ color: ACCENT, transparent: true, opacity: 0, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, toneMapped: false }));
-    var w = W3(p); m.position.set(w[0], w[1], w[2]); m.renderOrder = 20; rig.add(m);
-    var u = m.userData; u.section = section; u.baseE = 0; u.hoverAmp = 0.32;
-    for (var k in extra) u[k] = extra[k];
-    hot.push(m);
-    (groups[u.gid] = groups[u.gid] || { meshes: [], h: 0, t: 0 }).meshes.push(m);
-    return m;
-  }
-  hotspot([0.003, 0.415, -0.551], 0.07, 'about', { gid: 'about' });
-  hotspot([-0.265, 0.5, -0.48], 0.07, 'projects', { gid: 'projects-body' });
-  hotspot([0.265, 0.5, -0.48], 0.07, 'contact', { gid: 'start', isStart: true });
-  hotspot([0, 0.46, -0.1], 0.12, 'home', { gid: 'tank', isExt: true });
-
   return {
     rig: rig,
-    hot: hot,          /* meshes the pointer can hit */
-    groups: groups,    /* hover glow groups: { meshes, h (current), t (target) } */
+    screen: screen,    /* the TFT plane: the pointer is tested against it (its UVs say which menu row) */
     dash: dash,        /* { rpm, hover, dirty } */
-    /* hover glow fades toward its target */
-    updateGlow: function (dt) {
-      for (var id in groups) {
-        var gr = groups[id]; gr.h += (gr.t - gr.h) * Math.min(1, dt * 12);
-        for (var a = 0; a < gr.meshes.length; a++) { var gm = gr.meshes[a]; gm.material.opacity = gm.userData.baseE + gr.h * gm.userData.hoverAmp; }
-      }
-    },
-    /* the needle eases toward its target; the screen is redrawn only when something changed */
     /* info = { speedMs, travelledM }: the needle eases toward the revs for this speed */
     updateDash: function (dt, info) {
       var gr = gearAndRpm(info.speedMs);
