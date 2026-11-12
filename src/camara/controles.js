@@ -3,6 +3,7 @@
 import * as T from 'three';
 import { clamp } from '../config.js';
 import { tftHit } from '../moto/tft.js';
+import { takesViewKeys } from './teclas.js';
 
 export function createControls(canvas, cam, bike, page) {
   var camera = cam.camera, view = cam.view;
@@ -68,12 +69,11 @@ export function createControls(canvas, cam, bike, page) {
     view.yawT = clamp(view.yawT + dy, -1.2, 1.2); view.pitchT = clamp(view.pitchT + dp, -0.45, 0.45); view.lastInteract = performance.now();
   }
   window.addEventListener('keydown', function (e) {
-    var tg = e.target && e.target.tagName;
-    if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT' || e.altKey || e.ctrlKey || e.metaKey) return;
-    var k = e.key, hit = true;
+    if (!takesViewKeys({ key: e.key, sectionOpen: page.state.section !== 'home', targetTag: e.target && e.target.tagName, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey })) return;
+    var k = e.key;
     if (k === 'ArrowLeft') nudge(0.1, 0); else if (k === 'ArrowRight') nudge(-0.1, 0);
     else if (k === 'ArrowUp') nudge(0, 0.06); else if (k === 'ArrowDown') nudge(0, -0.06);
-    else if (k === 'Home') { view.yawT = 0; view.pitchT = 0; if (view.ext) view.spinT = -0.5; } else hit = false;
-    if (hit) e.preventDefault();
+    else { view.yawT = 0; view.pitchT = 0; if (view.ext) view.spinT = -0.5; }  /* Home */
+    e.preventDefault();
   });
 }

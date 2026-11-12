@@ -7,6 +7,11 @@ export function createPage() {
   var hero = document.getElementById('hero');
   var hint = document.getElementById('hint');
   var extBtn = document.getElementById('extbtn'), app = document.getElementById('app');
+  /* the section pages start just below the header (one row on desktop, two on phones): --top-h follows its real height */
+  var topEl = document.getElementById('top');
+  function fitTop() { app.style.setProperty('--top-h', Math.ceil(topEl.getBoundingClientRect().bottom + 12) + 'px'); }
+  if (window.ResizeObserver) new ResizeObserver(fitTop).observe(topEl); else window.addEventListener('resize', fitTop);
+  fitTop();
   var state = { section: 'home', mode: 'todo', boot: false };
   var gl = null, extOn = false;
 
