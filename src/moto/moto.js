@@ -3,10 +3,11 @@
    invisible hot spots over the real controls. */
 import * as T from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import { ACCENT, LABELS, REV } from '../config.js';
+import { ACCENT } from '../config.js';
 import { shadowsOn } from '../escena/utiles.js';
 import { BIKE_Y, LOW_GPU } from '../escena/medidas.js';
 import { drawDash } from './tablero.js';
+import { gearAndRpm, formatTrip, formatClock } from './tft.js';
 
 /* a point in bike space -> world */
 export function W3(p) { return [p[0], p[1] + BIKE_Y, p[2]]; }
@@ -110,7 +111,8 @@ export function createBike(scene, loader) {
   screen.renderOrder = 3;
   screen.matrix.makeBasis(new T.Vector3(0.99900, -0.02700, 0.01800), new T.Vector3(0.03246, 0.82588, -0.56292), new T.Vector3(0.00000, 0.56321, 0.82631)).setPosition(0.00950, 0.41910, -0.54849);
   screen.matrixAutoUpdate = false; bike.add(screen);
-  var dash = { rev: REV.home, revT: REV.home, label: LABELS.home, dirty: true };
+  /* what the screen shows; `dirty` forces a redraw (hover change, fonts loaded), otherwise at most 15 redraws a second */
+  var dash = { rpm: 1200, hover: null, dirty: true, since: 1, shown: '' };
 
   /* invisible hot spots over the real controls; they glow on hover */
   var hot = [], groups = {};
@@ -132,7 +134,7 @@ export function createBike(scene, loader) {
     rig: rig,
     hot: hot,          /* meshes the pointer can hit */
     groups: groups,    /* hover glow groups: { meshes, h (current), t (target) } */
-    dash: dash,        /* { rev, revT, label, dirty } */
+    dash: dash,        /* { rpm, hover, dirty } */
     /* hover glow fades toward its target */
     updateGlow: function (dt) {
       for (var id in groups) {
@@ -141,15 +143,20 @@ export function createBike(scene, loader) {
       }
     },
     /* the needle eases toward its target; the screen is redrawn only when something changed */
-    updateDash: function (dt, state) {
-      dash.rev += (dash.revT - dash.rev) * (1 - Math.exp(-dt * 5));
-      if (Math.abs(dash.revT - dash.rev) > 0.002) dash.dirty = true;
-      if (dash.dirty) {
-        drawDash(dctx, { rev: dash.rev, label: dash.label, mode: state.mode, boot: state.boot });
-        dashTex.needsUpdate = true; dash.dirty = false;
+    /* info = { speedMs, travelledM }: the needle eases toward the revs for this speed */
+    updateDash: function (dt, info) {
+      var gr = gearAndRpm(info.speedMs);
+      dash.rpm += (gr.rpm - dash.rpm) * (1 - Math.exp(-dt * 8));
+      dash.since += dt;
+      var st = { speedKmh: Math.round(info.speedMs * 3.6), gear: gr.gear, rpm: dash.rpm, trip: formatTrip(info.travelledM), clock: formatClock(new Date()), hover: dash.hover };
+      var key = [st.speedKmh, st.gear, Math.round(st.rpm / 50), st.trip, st.clock, st.hover].join('|');
+      if (dash.dirty || (key !== dash.shown && dash.since >= 1 / 15)) {
+        drawDash(dctx, st);
+        dashTex.needsUpdate = true; dash.dirty = false; dash.since = 0; dash.shown = key;
       }
     },
-    setSection: function (id) { dash.label = LABELS[id]; dash.revT = REV[id]; dash.dirty = true; },
+    /* the menu row under the pointer ('about' | 'projects' | 'contact' | null) */
+    setHover: function (id) { if (id !== dash.hover) { dash.hover = id; dash.dirty = true; } },
     /* draws the mirrors' picture (the glass is hidden while its own picture is drawn) */
     renderMirrors: function (renderer, scene) {
       if (mirrorMesh && (mirrorTick++ % mirrorEvery) === 0) {

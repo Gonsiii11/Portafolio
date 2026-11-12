@@ -60,6 +60,8 @@ export function createCurves(scene) {
   return {
     /* metres travelled this frame */
     advance: function (step) { travelled += step; curveU.value = travelled % CURVE_P; },
+    /* metres travelled since the page loaded (the TFT's trip) */
+    travelled: function () { return travelled; },
     /* a hint of lean into the bend: a third of the physical angle atan(v²·curvature / g), capped under 1°, eased slowly,
        so the ground tilts a little while the sky stays still */
     updateLean: function (speed, dt) {

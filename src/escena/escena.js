@@ -70,7 +70,7 @@ export function createScene(page) {
     cam.update(now, dt, speed);
     sky.update(camera);
     bike.updateGlow(dt);
-    bike.updateDash(dt, page.state);
+    bike.updateDash(dt, { speedMs: speed, travelledM: curves.travelled() });
 
     if (!reduce) terrain.setTime(now / 1000);
     curves.updateLean(speed, dt);
@@ -93,7 +93,7 @@ export function createScene(page) {
 
   return {
     setExt: function (on) { cam.setExt(on); },
-    setView: function (id, viewKey) { cam.setView(id, viewKey); bike.setSection(id); },
-    setModeVisual: function () { bike.dash.dirty = true; }
+    setView: function (id, viewKey) { cam.setView(id, viewKey); },
+    setModeVisual: function () {}  /* the TFT no longer shows the project filter */
   };
 }
