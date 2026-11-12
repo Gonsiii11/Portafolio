@@ -150,6 +150,23 @@ window.THREE = THREE;
     renderer.outputEncoding = T.sRGBEncoding;
     renderer.toneMapping = T.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
+    var LOW_GPU = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = T.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = false;  /* refreshed once per frame in frame(), shared by the mirror pass */
+    /* everything solid casts and receives the sun's shadow; foliage cuts its shadow by the leaf texture's alpha */
+    var depthMats = {};
+    function shadowsOn(root) {
+      root.traverse(function (o) {
+        if (!o.isMesh) return;
+        o.castShadow = o.receiveShadow = true;
+        var m = o.material;
+        if (m && m.alphaTest > 0 && m.map) {
+          o.customDepthMaterial = depthMats[m.uuid] = depthMats[m.uuid] || new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map: m.map, alphaTest: m.alphaTest, side: T.DoubleSide });
+        }
+      });
+      return root;
+    }
     renderer.setClearColor(0x0B0D10, 1);
 
     var GROUND = -0.97, HAZE = 0x6a3b3f, HAZE_DAY = 0x8a8170;
@@ -235,7 +252,7 @@ window.THREE = THREE;
     roadTex.repeat.set(1, ROAD_LEN / PERIOD);
     roadTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     var road = new T.Mesh(new T.PlaneGeometry(ROAD_W, ROAD_LEN), new T.MeshStandardMaterial({ map: roadTex, roughness: 0.92, metalness: 0 }));
-    road.rotation.x = -Math.PI / 2; road.position.set(-1.75, GROUND + 0.002, 10 - ROAD_LEN / 2); scene.add(road);
+    road.rotation.x = -Math.PI / 2; road.position.set(-1.75, GROUND + 0.002, 10 - ROAD_LEN / 2); road.receiveShadow = true; scene.add(road);
 
     /* real asphalt: texture from «Street road» by saifurrehman (CC BY 4.0), rotated so the lanes run along v.
        One tile = 28 m of road. Swaps in when loaded; the painted road stays if it fails. */
@@ -275,7 +292,7 @@ window.THREE = THREE;
       terGeo.computeVertexNormals();
     })();
     var ground = new T.Mesh(terGeo, new T.MeshStandardMaterial({ color: 0x0e1511, roughness: 1, metalness: 0 }));
-    ground.position.set(0, GROUND, TER_Z0); scene.add(ground);
+    ground.position.set(0, GROUND, TER_Z0); ground.receiveShadow = true; scene.add(ground);
     new T.TextureLoader().load('terreno/hierba.jpg', function (tex) {
       tex.encoding = T.sRGBEncoding;
       tex.wrapS = tex.wrapT = T.RepeatWrapping;
@@ -310,7 +327,7 @@ window.THREE = THREE;
       }
       g.position.set(edgeX(r[0], 0.9), 0, r[1]);
       if (r[0] > 0) g.scale.x = -1;  /* local +x must point at the road */
-      scene.add(g); props.push({ obj: g, zMax: 8, span: SPAN });
+      shadowsOn(g); scene.add(g); props.push({ obj: g, zMax: 8, span: SPAN });
     });
     /* delineator posts: white, black band, a reflector facing the rider; every 24 m where there is no guardrail */
     var hitoGeo = new T.BoxGeometry(0.1, 1.05, 0.12), bandGeo = new T.BoxGeometry(0.104, 0.24, 0.124), reflGeo = new T.PlaneGeometry(0.05, 0.14);
@@ -327,7 +344,7 @@ window.THREE = THREE;
         var band = new T.Mesh(bandGeo, bandMat); band.position.y = GROUND + 0.84; g.add(band);
         var refl = new T.Mesh(reflGeo, reflMat); refl.position.set(0, GROUND + 0.84, 0.063); g.add(refl);
         g.position.set(edgeX(side, 0.8), 0, z);
-        scene.add(g); props.push({ obj: g, zMax: 8, span: SPAN });
+        shadowsOn(g); scene.add(g); props.push({ obj: g, zMax: 8, span: SPAN });
       }
     });
     var treeGeo = new T.ConeGeometry(1.5, 5.5, 7), treeMat = new T.MeshBasicMaterial({ color: 0x0b1210 }), treeProps = [];
@@ -382,7 +399,7 @@ window.THREE = THREE;
         g.scale.setScalar(6 + Math.random() * 4);
         g.rotation.y = Math.random() * Math.PI * 2;
         g.position.set(pr.obj.position.x, groundY(pr.obj.position.x, pr.obj.position.z) - 0.15, pr.obj.position.z);
-        scene.remove(pr.obj); scene.add(g); pr.obj = g; pr.lift = -0.15;
+        scene.remove(pr.obj); shadowsOn(g); scene.add(g); pr.obj = g; pr.lift = -0.15;
       });
     });
 
@@ -415,7 +432,7 @@ window.THREE = THREE;
             m.position.set(cx + (r ? (Math.random() - 0.5) * 6 : 0), 0, cz + (r ? (Math.random() - 0.5) * 6 : 0));
             if (Math.abs(m.position.x - ROAD_CX) < ROAD_W / 2 + 5) m.position.x = ROAD_CX + sd * (ROAD_W / 2 + 5);
             m.position.y = groundY(m.position.x, m.position.z) - 0.12 * sc;
-            scene.add(m); props.push({ obj: m, zMax: 8, span: 348, lift: -0.12 * sc });
+            shadowsOn(m); scene.add(m); props.push({ obj: m, zMax: 8, span: 348, lift: -0.12 * sc });
           }
         }
       }
@@ -438,9 +455,17 @@ window.THREE = THREE;
       pm.dispose();
     } catch (e) {}
 
-    scene.add(new T.HemisphereLight(0x8aa0d8, 0x2a1a16, 0.6));
-    var sunLight = new T.DirectionalLight(0xff9a60, 1.2); sunLight.position.set(-12, 5, 16);  /* from the photo's sun, behind on the left */ scene.add(sunLight);
-    var fill = new T.DirectionalLight(0xa8bcff, 0.9); fill.position.set(1.5, 6, 6); scene.add(fill);
+    scene.add(new T.HemisphereLight(0x9db4e0, 0x4a4030, 0.38));  /* sky light: soft and bluish, fills the shadows */
+    /* the sun, from the photo's sun (behind on the left, low). Its shadow box (70 m square) is re-centred on the
+       rider every frame, a little ahead, so near objects always get crisp shadows. */
+    var SUN_DIR = new T.Vector3(-12, 8, 16).normalize();
+    var sunLight = new T.DirectionalLight(0xffb37e, 3.2);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(LOW_GPU ? 1024 : 4096, LOW_GPU ? 1024 : 4096);
+    var sc0 = sunLight.shadow.camera; sc0.left = -35; sc0.right = 35; sc0.top = 35; sc0.bottom = -35; sc0.near = 1; sc0.far = 160;
+    sunLight.shadow.bias = -0.0004; sunLight.shadow.normalBias = 0.03; sunLight.shadow.radius = 3;
+    scene.add(sunLight); scene.add(sunLight.target);
+    var fill = new T.DirectionalLight(0xa8bcff, 0.22); fill.position.set(1.5, 6, 6); scene.add(fill);
     var dashLight = new T.PointLight(CYAN, 0.5, 0.9); dashLight.position.set(0, GROUND + 1.05, -0.35); scene.add(dashLight);
 
     var M = {
@@ -528,7 +553,7 @@ window.THREE = THREE;
        glasses (one primitive in the model). Each glass gets its own side of that picture, flipped like a real mirror:
        the rear camera's right half is the rider's left, so the left glass maps to u 0.95 → 0.6 from its outer edge in. */
     var MIRROR_PRIM = 'Object_79', mirrorMesh = null, mirrorTick = 0;
-    var mirrorEvery = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ? 2 : 1;  /* phones: every other frame */
+    var mirrorEvery = LOW_GPU ? 2 : 1;  /* phones: every other frame */
     var mirrorRT = new T.WebGLRenderTarget(512, 256);
     mirrorRT.texture.encoding = T.sRGBEncoding;
     var mirrorMat = new T.MeshBasicMaterial({ map: mirrorRT.texture, color: 0xd5dbe2, toneMapped: false });
@@ -566,6 +591,7 @@ window.THREE = THREE;
         var mesh = new T.Mesh(geo, mats[p.m]);
         if (mesh.material.transparent) mesh.renderOrder = 2;
         if (p.n === MIRROR_PRIM) { mirrorUVs(geo); mesh.material = mirrorMat; mirrorMesh = mesh; }
+        if (!mesh.material.transparent) shadowsOn(mesh);
         bike.add(mesh);
       });
     }
@@ -797,6 +823,9 @@ window.THREE = THREE;
         dashTex.needsUpdate = true; dash.dirty = false;
       }
 
+      sunLight.target.position.set(camera.position.x, GROUND, camera.position.z - 18);
+      sunLight.position.copy(sunLight.target.position).addScaledVector(SUN_DIR, 80);
+      renderer.shadowMap.needsUpdate = true;
       if (mirrorMesh && (mirrorTick++ % mirrorEvery) === 0) {  /* the glass is hidden while its own picture is drawn */
         mirrorMesh.visible = false;
         renderer.setRenderTarget(mirrorRT); renderer.render(scene, rearCam); renderer.setRenderTarget(null);
