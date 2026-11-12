@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import './style.css';
 
 // El código de la escena usa THREE como global (three@0.128.0, fijado en package.json).
@@ -247,13 +249,60 @@ window.THREE = THREE;
       scene.add(g); props.push({ obj: g, zMax: 8, span: 336 });
     }
     for (i = 0; i < 12; i++) { addLamp(1, 6 - i * 28); addLamp(-1, -8 - i * 28); }
-    var treeGeo = new T.ConeGeometry(1.5, 5.5, 7), treeMat = new T.MeshBasicMaterial({ color: 0x0b1210 });
+    var treeGeo = new T.ConeGeometry(1.5, 5.5, 7), treeMat = new T.MeshBasicMaterial({ color: 0x0b1210 }), treeProps = [];
     for (i = 0; i < 52; i++) {
       var tr = new T.Mesh(treeGeo, treeMat), sc = 0.7 + Math.random() * 1.1, sd0 = i % 2 ? 1 : -1;
       tr.scale.set(sc, sc, sc);
       tr.position.set(sd0 * (6 + Math.random() * 40) + (sd0 > 0 ? 0 : -3), GROUND + 2.75 * sc, 8 - Math.random() * 340);
-      scene.add(tr); props.push({ obj: tr, zMax: 8, span: 348 });
+      scene.add(tr); props.push({ obj: tr, zMax: 8, span: 348 }); treeProps.push(props[props.length - 1]);
     }
+
+    /* Scots pines («Scots Pine Trees Set» by Maksim Batyrev, CC BY 4.0). The set has 9 trees laid out on a grid;
+       each one is baked to its own geometry (one per material), stood on y = 0 and scaled to 1 m tall,
+       then every placeholder cone is swapped for a random pine. If loading fails, the cones stay. */
+    new GLTFLoader().load('pinos/scene.gltf', function (gltf) {
+      gltf.scene.updateMatrixWorld(true);
+      var parts = {}, mats = {};
+      gltf.scene.traverse(function (o) {
+        if (!o.isMesh || /Box001/.test(o.name)) return;
+        var id = (o.name.match(/^(\d+)_/) || [])[1];
+        if (!id) return;
+        var m = o.material;
+        if (!mats[m.name]) {
+          if (m.map && m.transparent) { m.transparent = false; m.alphaTest = 0.2; m.alphaToCoverage = true; m.depthWrite = true; }
+          m.side = T.DoubleSide; m.envMapIntensity = 0.35; m.needsUpdate = true; mats[m.name] = m;
+        }
+        var g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld);
+        parts[id] = parts[id] || {};
+        (parts[id][m.name] = parts[id][m.name] || []).push(g);
+      });
+      var types = Object.keys(parts).map(function (id) {
+        var list = [], box = new T.Box3();
+        Object.keys(parts[id]).forEach(function (mn) {
+          var geos = parts[id][mn], merged = geos.length > 1 ? BufferGeometryUtils.mergeBufferGeometries(geos) : geos[0];
+          if (merged) list.push([merged, mats[mn]]); else geos.forEach(function (g) { list.push([g, mats[mn]]); });
+        });
+        list.forEach(function (p) { p[0].computeBoundingBox(); box.union(p[0].boundingBox); });
+        var c = box.getCenter(new T.Vector3()), s = 1 / (box.max.y - box.min.y);
+        var mtx = new T.Matrix4().makeScale(s, s, s).multiply(new T.Matrix4().makeTranslation(-c.x, -box.min.y, -c.z));
+        list.forEach(function (p) { p[0].applyMatrix4(mtx); p[0].computeBoundingSphere(); });
+        return list;
+      });
+      if (!types.length) return;
+      treeProps.forEach(function (pr) {
+        var t = types[Math.floor(Math.random() * types.length)], g = new T.Group();
+        t.forEach(function (p) {
+          g.add(new T.Mesh(p[0], p[1]));
+          if (p[1].alphaTest > 0) {  /* foliage: a second copy, turned and a touch wider, fills out the sparse crown */
+            var f = new T.Mesh(p[0], p[1]); f.rotation.y = 1.2 + Math.random() * 0.6; f.scale.set(1.12, 0.94, 1.12); g.add(f);
+          }
+        });
+        g.scale.setScalar(6 + Math.random() * 4);
+        g.rotation.y = Math.random() * Math.PI * 2;
+        g.position.set(pr.obj.position.x, GROUND, pr.obj.position.z);
+        scene.remove(pr.obj); scene.add(g); pr.obj = g;
+      });
+    });
 
     /* reflections: the sunset sky, so paint and metal pick up warm light */
     try {

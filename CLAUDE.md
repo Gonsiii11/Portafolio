@@ -26,6 +26,7 @@ npm run build    # genera dist/
 3. Cualquier modelo 3D nuevo (por ejemplo una carretera) debe tener licencia que permita su uso y llevar su crédito.
    - Carretera: textura de «Street road» de saifurrehman (https://sketchfab.com/3d-models/street-road-a01b47f299b24ac99a1dcd8e2111364b), CC BY 4.0. Solo se usa la textura del asfalto (`public/carretera/asfalto.jpg`); crédito en `#credit` y `#pcredit`, licencia en `public/carretera/LICENSE-modelo.txt`.
    - Fondo: panorama «Rolling Hills» de Poly Haven (CC0, no exige crédito), convertido con `herramientas/hdr2jpg.py` a `public/fondo/rolling_hills.jpg`.
+   - Pinos: «Scots Pine Trees Set» de Maksim Batyrev (https://sketchfab.com/3d-models/scots-pine-trees-set-422b961ff3d14e7baa7e9077572b2247), CC BY 4.0. En `public/pinos/` con texturas reducidas y follaje engrosado (`herramientas/reducir_pinos.py`); crédito en `#credit` y `#pcredit`.
    - Los originales descargados van en `modelos-fuente/` (fuera de git).
 4. Accesible y responsive: tiene que funcionar a 400 px de ancho, respetar `prefers-reduced-motion` y tener la versión sin 3D (`#nogl`).
 5. Los datos de contacto y proyectos entre corchetes `[...]` son huecos por rellenar: no sustituirlos por datos inventados.
@@ -33,7 +34,7 @@ npm run build    # genera dist/
 ## Pendiente (por orden)
 1. Rellenar Contacto (email, LinkedIn, GitHub, enlace al CV) y los proyectos reales.
 2. Inclinación del móvil para mirar alrededor (`DeviceOrientationEvent`; en iPhone pide permiso con `requestPermission` desde un toque).
-3. Paisaje de sierra con pinos (rama `paisaje/*`): hecho el fondo y el asfalto; faltan el terreno a los lados, los pinos (modelos 3D) y las rocas.
+3. Paisaje de sierra con pinos (rama `paisaje/*`): hechos el fondo, el asfalto y los pinos; faltan el terreno a los lados, las rocas y cambiar las farolas.
 4. Separar `main.js` en módulos (escena, moto, interfaz, datos de proyectos).
 5. Probar en móvil y escritorio, y mirar el rendimiento.
 6. Publicar en Vercel o Netlify.
