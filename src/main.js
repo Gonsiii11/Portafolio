@@ -202,6 +202,72 @@ window.THREE = THREE;
     scene.fog = new T.Fog(HAZE, 30, 260);
     var camera = new T.PerspectiveCamera(55, 1, 0.02, 700);
 
+    /* ---------- curves: the world is built straight and bent in the vertex shader ----------
+       Everything keeps sliding along a straight z axis (that is what lets it all wrap without seams). Each vertex is
+       pushed sideways by  X(s + d) - X(s) - X'(s)·d,  where s = metres travelled and d = metres ahead (-z): zero offset and
+       zero slope at the bike, so the bike stays in its lane, while the road ahead swings left and right and the terrain,
+       forest, grass, rocks and roadside furniture swing with it (they all use the same function). X is a sum of sines that
+       repeats every CURVE_P metres. Through a bend the world also rolls around the bike's contact patch by the lean angle,
+       atan(v²·X''/g), as when a rider leans. The bike itself, the sky and the camera are not bent. */
+    var CURVE_P = 1500, CURVE = [[55, 2, 0], [11, 5, 1.3], [1.8, 11, 4.1]];  /* amplitude (m), cycles per CURVE_P, phase */
+    CURVE.forEach(function (c) { c.push(Math.PI * 2 * c[1] / CURVE_P); });   /* c[3] = angular frequency */
+    var curveU = { value: 0 }, leanU = { value: 0 }, travelled = 0;
+    function curveD2(s) { var v = 0; CURVE.forEach(function (c) { v -= c[0] * c[3] * c[3] * Math.sin(c[3] * s + c[2]); }); return v; }
+    var CURVE_GLSL = [
+      'uniform float uCurveS;', 'uniform float uLean;',
+      'float cX( float s ) { return ' + CURVE.map(function (c) { return c[0].toFixed(3) + ' * sin( ' + c[3].toFixed(7) + ' * s + ' + c[2].toFixed(3) + ' )'; }).join(' + ') + '; }',
+      'float cD( float s ) { return ' + CURVE.map(function (c) { return (c[0] * c[3]).toFixed(7) + ' * cos( ' + c[3].toFixed(7) + ' * s + ' + c[2].toFixed(3) + ' )'; }).join(' + ') + '; }',
+      'vec4 bendWorld( vec4 w, float amt ) {',
+      '  float d = -w.z;',
+      '  w.x += amt * ( cX( uCurveS + d ) - cX( uCurveS ) - cD( uCurveS ) * d );',
+      '  float c = cos( uLean ), sn = sin( uLean ); vec2 p = vec2( w.x, w.y - ( ' + GROUND.toFixed(3) + ' ) );',
+      '  w.xy = vec2( c * p.x - sn * p.y, sn * p.x + c * p.y + ( ' + GROUND.toFixed(3) + ' ) );',
+      '  return w;',
+      '}', ''
+    ].join('\n');
+    function bentChunks(amt) {
+      return {
+        project: ['vec4 mvPosition = vec4( transformed, 1.0 );', '#ifdef USE_INSTANCING', '  mvPosition = instanceMatrix * mvPosition;', '#endif',
+          'mvPosition = viewMatrix * bendWorld( modelMatrix * mvPosition, ' + amt + ' );', 'gl_Position = projectionMatrix * mvPosition;'].join('\n'),
+        world: ['#if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP )', '  vec4 worldPosition = vec4( transformed, 1.0 );',
+          '  #ifdef USE_INSTANCING', '    worldPosition = instanceMatrix * worldPosition;', '  #endif',
+          '  worldPosition = bendWorld( modelMatrix * worldPosition, ' + amt + ' );', '#endif'].join('\n')
+      };
+    }
+    var NOOP_OBC = T.Material.prototype.onBeforeCompile;
+    /* wraps a material's own onBeforeCompile (if any) with the bend; re-wraps if the material later gets a new one */
+    function bendify(m, amt) {
+      if (m.userData.bentWrap && m.onBeforeCompile === m.userData.bentWrap) return m;
+      var prev = m.onBeforeCompile !== NOOP_OBC ? m.onBeforeCompile : null, a = (amt === undefined ? 1 : amt).toFixed(1), ch = bentChunks(a);
+      m.onBeforeCompile = m.userData.bentWrap = function (sh, r) {
+        if (prev) prev.call(m, sh, r);
+        sh.uniforms.uCurveS = curveU; sh.uniforms.uLean = leanU;
+        sh.vertexShader = CURVE_GLSL + sh.vertexShader.replace('#include <project_vertex>', ch.project).replace('#include <worldpos_vertex>', ch.world);
+      };
+      var key = 'curve' + a + '|' + (prev ? prev.toString() : '');
+      m.customProgramCacheKey = function () { return key; };  /* or every wrapped material would share one cached program */
+      m.needsUpdate = true;
+      return m;
+    }
+    var bentDepth = bendify(new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking }));
+    /* run every frame: bends whatever is new or changed (loaders add things late); the rig (bike) is skipped */
+    function bendScene() {
+      for (var c = 0; c < scene.children.length; c++) {
+        var top = scene.children[c];
+        if (top === rig || top.userData.noBend) continue;
+        top.traverse(function (o) {
+          if (!o.isMesh || o.userData.noBend) return;
+          var amt = o.userData.bendAmt;
+          var ms = Array.isArray(o.material) ? o.material : [o.material];
+          for (var k = 0; k < ms.length; k++) bendify(ms[k], amt);
+          if (o.castShadow) {
+            if (!o.customDepthMaterial) o.customDepthMaterial = bentDepth;
+            else bendify(o.customDepthMaterial);
+          }
+        });
+      }
+    }
+
     function canvasTex(w, h, draw) {
       var c = document.createElement('canvas'); c.width = w; c.height = h;
       draw(c.getContext('2d'), w, h);
@@ -218,7 +284,7 @@ window.THREE = THREE;
       x.fillStyle = g; x.fillRect(0, 0, w, h);
     });
     var sky = new T.Mesh(new T.SphereGeometry(400, 32, 16), new T.MeshBasicMaterial({ map: skyTex, side: T.BackSide, fog: false, depthWrite: false }));
-    sky.renderOrder = -2; scene.add(sky);
+    sky.renderOrder = -2; sky.userData.noBend = true; scene.add(sky);
 
     var sunTex = canvasTex(256, 256, function (x, w, h) {
       var g = x.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
@@ -240,7 +306,7 @@ window.THREE = THREE;
       x.lineTo(w, h); x.closePath(); x.fill();
     });
     var mtn = new T.Mesh(new T.CylinderGeometry(300, 300, 36, 64, 1, true), new T.MeshBasicMaterial({ map: mtnTex, transparent: true, side: T.BackSide, fog: false, depthWrite: false }));
-    mtn.position.y = GROUND + 14; scene.add(mtn);
+    mtn.position.y = GROUND + 14; mtn.userData.noBend = true; scene.add(mtn);
 
     /* real panorama (Poly Haven «Rolling Hills», CC0), pre-rotated so the mountain range lies ahead and the sun sits
        behind on the left (u = 0.85), lighting the landscape from the side; the band above the horizon is stretched ×2.4 so the mountains stand taller
@@ -255,7 +321,7 @@ window.THREE = THREE;
          the image is already tone-mapped, and mapping it twice washed out the mountains.
          scale.x = -1 and the half turn make the sphere's UVs match three.js equirect (u = 0.25 straight ahead) */
       pano = new T.Mesh(new T.SphereGeometry(650, 64, 32), new T.MeshBasicMaterial({ map: tex, side: T.BackSide, fog: false, depthWrite: false, toneMapped: false }));
-      pano.scale.x = -1; pano.rotation.y = Math.PI; pano.renderOrder = -2; scene.add(pano);
+      pano.scale.x = -1; pano.rotation.y = Math.PI; pano.renderOrder = -2; pano.userData.bendAmt = 0; scene.add(pano);  /* leans, doesn't bend */
       scene.remove(sky); scene.remove(mtn); scene.remove(sun);  /* the photo has its own sun */
       scene.fog.color.setHex(HAZE_DAY); scene.fog.near = 60; scene.fog.far = 600;
       ground.material.color.setHex(0xc9c4b4); ground.material.envMapIntensity = 0.3;
@@ -280,7 +346,7 @@ window.THREE = THREE;
     roadTex.wrapS = roadTex.wrapT = T.RepeatWrapping;
     roadTex.repeat.set(1, ROAD_LEN / PERIOD);
     roadTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    var road = new T.Mesh(new T.PlaneGeometry(ROAD_W, ROAD_LEN), new T.MeshStandardMaterial({ map: roadTex, roughness: 0.92, metalness: 0 }));
+    var road = new T.Mesh(new T.PlaneGeometry(ROAD_W, ROAD_LEN, 2, ROAD_LEN / 2), new T.MeshStandardMaterial({ map: roadTex, roughness: 0.92, metalness: 0 }));  /* 2 m rows so it can follow the curves */
     road.rotation.x = -Math.PI / 2; road.position.set(-1.75, GROUND + 0.002, 10 - ROAD_LEN / 2); road.receiveShadow = true; scene.add(road);
 
     /* real asphalt: texture from «Street road» by saifurrehman (CC BY 4.0), rotated so the lanes run along v.
@@ -305,7 +371,7 @@ window.THREE = THREE;
     /* terrain: a flat shoulder beside the road, then banks and rolling ground rising to both sides.
        Heights repeat every TER_P metres along z, so the mesh slides with the road and jumps back one period.
        Texture: «Aerial Grass Rock» from Poly Haven (CC0), one tile = 15 m. */
-    var TER_P = 60, TER_W = 440, TER_L = 480, TER_SEG = 160, ROAD_CX = -1.75, TER_Z0 = 24 - TER_L / 2;
+    var TER_P = 60, TER_W = 800, TER_L = 480, TER_SEG = 160, ROAD_CX = -1.75, TER_Z0 = 24 - TER_L / 2;
     function terH(x, z) {
       var d = Math.abs(x - ROAD_CX) - ROAD_W / 2 - 2.5;
       if (d <= 0) return 0;
@@ -1059,6 +1125,7 @@ window.THREE = THREE;
       if (step > 0) {
         roadTex.offset.y = (roadTex.offset.y + step / PERIOD) % 1;
         ground.position.z += step;
+        travelled += step; curveU.value = travelled % CURVE_P;
         forest.position.z += step;
         if (forest.position.z > FOREST_Z0 + FOREST_S) forest.position.z -= FOREST_S;
         if (ground.position.z > TER_Z0 + TER_P) ground.position.z -= TER_P;
@@ -1123,6 +1190,10 @@ window.THREE = THREE;
       }
 
       if (!reduce) grassTime.value = now / 1000;
+      /* lean into the bend: atan(v²·curvature / g), capped, eased */
+      var leanT = Math.max(-0.32, Math.min(0.32, Math.atan(speed * speed * curveD2(curveU.value) / 9.81)));
+      leanU.value += (leanT - leanU.value) * (1 - Math.exp(-dt * 3));
+      bendScene();
       sunLight.target.position.set(camera.position.x, GROUND, camera.position.z - 18);
       sunLight.position.copy(sunLight.target.position).addScaledVector(SUN_DIR, 80);
       renderer.shadowMap.needsUpdate = true;

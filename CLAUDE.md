@@ -42,6 +42,11 @@ npm run build    # genera dist/
 5. Probar en móvil y escritorio, y mirar el rendimiento.
 6. Publicar en Vercel o Netlify.
 
+## Curvas (no romper)
+- La escena se construye recta y se curva en el sombreado de vértices (ver «curves» en `main.js`): cada punto se desplaza de lado según `X(s+d) − X(s) − X'(s)·d` y el mundo se inclina con la moto en las curvas. `bendScene()` aplica la curva cada fotograma a todo lo que no es la moto, incluidas las sombras.
+- Toda malla larga necesita vértices a lo largo (cada pocos metros) para poder curvarse: una malla de solo dos triángulos se queda recta.
+- Lo que no deba curvarse lleva `userData.noBend`; lo que solo deba inclinarse, `userData.bendAmt = 0` (el panorama).
+
 ## Carga por fases (no romper)
 - La web carga en tres fases para que la primera vista sea ligera (ver «loading in phases» en `main.js`): 1) moto, asfalto y cielo de 1k; 2) cuando la moto (y sus texturas) están listas, terreno pequeño, pinos y rocas; 3) con el navegador libre, texturas grandes. `TIER` 1 (pantallas táctiles, ahorro de datos, 2g/3g) tiene techos más bajos.
 - Las texturas se sirven en WebP en varios tamaños, generadas con `herramientas/variantes_web.py` desde los originales de `modelos-fuente/`. Cualquier textura nueva entra por `loadTiered` y con sus variantes.
