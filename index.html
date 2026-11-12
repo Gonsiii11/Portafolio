@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iván Herrera · Portfolio</title>
+<meta name="description" content="Portfolio de Iván Herrera González: desarrollo de software con foco en automoción.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Space+Grotesk:wght@500;700&display=swap">
+</head>
+<body>
+<div id="app">
+  <canvas id="gl" aria-label="Vista en primera persona desde una moto, en 3D. Arrastra para mirar y toca un mando para abrir una sección."></canvas>
+
+  <div id="pins" aria-hidden="true">
+    <button class="pin" type="button" tabindex="-1" data-go="about"><span class="dot"></span>Sobre mí</button>
+    <button class="pin" type="button" tabindex="-1" data-go="projects"><span class="dot"></span>Proyectos</button>
+    <button class="pin" type="button" tabindex="-1" data-go="contact"><span class="dot"></span>Contacto</button>
+    <button class="pin" type="button" tabindex="-1" data-go="ext"><span class="dot"></span>Ver la moto</button>
+  </div>
+
+  <div id="ui">
+    <header id="top">
+      <span class="brand"><b aria-hidden="true">IH</b>Iván Herrera</span>
+      <nav id="nav" aria-label="Secciones">
+        <button class="navbtn" type="button" data-go="home" aria-current="true">Inicio</button>
+        <button class="navbtn" type="button" data-go="about" aria-current="false">Sobre mí</button>
+        <button class="navbtn" type="button" data-go="projects" aria-current="false">Proyectos</button>
+        <button class="navbtn" type="button" data-go="contact" aria-current="false">Contacto</button>
+        <button class="navbtn" id="extbtn" type="button" aria-current="false">Ver la moto</button>
+      </nav>
+    </header>
+    <section id="hero">
+      <p class="status"><i aria-hidden="true"></i>Busco prácticas · Madrid · 20 h/semana</p>
+      <h1>Software con alma de <em>motor.</em></h1>
+      <p class="lead">Estudiante de desarrollo de software en tercer curso. Mi foco es el software de automoción, pero me interesa cualquier problema bien planteado: web, backend, algoritmos.</p>
+    </section>
+    <p id="nogl" hidden>La escena 3D no se puede mostrar en este navegador. Usa el menú de arriba para ver cada sección.</p>
+    <p id="hint">ARRASTRA PARA MIRAR · TOCA LOS MANDOS</p>
+    <p id="credit">Moto 3D: «BMW S1000RR 2019» de <a href="https://sketchfab.com/3d-models/bmw-s1000rr-2019-f842e86791ae4820aa7d45f76ecc94dc" target="_blank" rel="noopener">VTX</a> · <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a> · reducida para la web</p>
+    <p id="loading">Cargando la moto…</p>
+  </div>
+
+  <aside id="panel" role="region" aria-label="Contenido de la sección" aria-hidden="true" tabindex="-1" inert>
+    <button id="close" type="button" aria-label="Cerrar sección"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 3l12 12M15 3L3 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+    <div id="pbody">
+
+      <section class="sec" data-sec="about" hidden>
+        <p class="eyebrow">Sobre mí</p>
+        <h2>Del código a la carretera</h2>
+        <p>Estudio desarrollo de software y estoy en tercer curso. Lo que más me llama es el software del sector automoción: me gustan los coches, las motos y la aviación.</p>
+        <p>Aun así, no me cierro a nada: me interesa cualquier equipo que construya buen software, sea de automoción o no. Ahora busco unas prácticas en Madrid, de 20 horas semanales.</p>
+        <dl class="spec">
+          <div><dt>Formación</dt><dd>Desarrollo de software, 3.º</dd></div>
+          <div><dt>Ubicación</dt><dd>Madrid</dd></div>
+          <div><dt>Disponibilidad</dt><dd>20 h/semana</dd></div>
+          <div><dt>Foco</dt><dd>Software de automoción</dd></div>
+        </dl>
+        <p class="label">Tecnologías en mis proyectos</p>
+        <div class="tags"><span class="tag">PHP</span><span class="tag">Laravel</span><span class="tag">Python</span><span class="tag">C++</span><span class="tag ph">[+ las tuyas]</span></div>
+      </section>
+
+      <section class="sec" data-sec="projects" hidden>
+        <p class="eyebrow">Proyectos</p>
+        <h2>Elige tu modo de conducción</h2>
+        <div class="modes" role="group" aria-label="Filtrar proyectos por modo">
+          <button class="chip" type="button" data-mode="todo" aria-pressed="true">Todo</button>
+          <button class="chip" type="button" data-mode="auto" aria-pressed="false">Automoción</button>
+          <button class="chip" type="button" data-mode="web" aria-pressed="false">Software general</button>
+        </div>
+        <p data-mode-text="todo">Todos mis proyectos, de la simulación de conducción al desarrollo web.</p>
+        <p data-mode-text="auto" hidden>Lo que más me mueve: simulación y optimización aplicadas a la conducción.</p>
+        <p data-mode-text="web" hidden>Aplicaciones web y backend para clientes reales.</p>
+
+        <article class="pcard" data-modes="auto">
+          <svg class="circuit" viewBox="36 14 350 215" role="img" aria-label="Ilustración de un circuito con su trazada dibujándose">
+            <path class="track" d="M60 120 C60 60 140 30 220 52 C290 72 310 40 345 80 C375 118 330 175 262 165 C200 155 190 205 120 195 C75 188 60 160 60 120 Z" fill="none" stroke-width="22" stroke-linejoin="round"/>
+            <path class="line" pathLength="1000" d="M66 118 C68 72 140 46 218 60 C284 74 306 52 336 86 C362 116 324 152 262 148 C196 142 188 190 122 182 C80 176 66 156 66 118 Z" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="pmeta"><p class="eyebrow">Automoción · Simulación</p><span class="state">Planificado</span></div>
+          <h3>Trazada óptima con algoritmos genéticos</h3>
+          <p>Reproducción del paper «Searching for the Optimal Racing Line Using Genetic Algorithms» (Cardamone et al., 2010) sobre el simulador TORCS.</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">C++</span><span class="tag">TORCS</span><span class="tag">Algoritmos genéticos</span></div>
+          <p class="src">[Enlace al repositorio cuando esté publicado]</p>
+        </article>
+
+        <article class="pcard" data-modes="web">
+          <div class="pmeta"><p class="eyebrow">Web · Backend · Cliente real</p><span class="state">En preparación</span></div>
+          <h3>Web y gestor de citas para una hípica</h3>
+          <p>Migración de la web del cliente (hoy en Framer con reservas en Cal.com) y gestor de citas propio con pago por adelantado y bonos de clases.</p>
+          <div class="tags"><span class="tag">PHP</span><span class="tag">Laravel</span><span class="tag">Reservas</span><span class="tag">Pagos</span></div>
+          <p class="src">[Enlace a la web cuando esté publicada]</p>
+        </article>
+
+        <article class="pcard ph">
+          <p class="eyebrow">[Espacio libre]</p>
+          <h3>Aquí irá tu siguiente proyecto</h3>
+          <p>Cada proyecto se etiqueta como automoción o software general, y los botones de la moto lo muestran donde toque.</p>
+        </article>
+      </section>
+
+      <section class="sec" data-sec="contact" hidden>
+        <p class="eyebrow">Contacto</p>
+        <h2>Motor en marcha. ¿Hablamos?</h2>
+        <p>Busco unas prácticas de 20 horas semanales en Madrid. Si tu equipo hace software, sea de automoción o no, me encantará saber más.</p>
+        <dl class="rows">
+          <div><dt>Email</dt><dd>[tu email]</dd></div>
+          <div><dt>LinkedIn</dt><dd>[tu perfil]</dd></div>
+          <div><dt>GitHub</dt><dd>[tu usuario]</dd></div>
+          <div><dt>CV</dt><dd>[enlace al PDF]</dd></div>
+        </dl>
+      </section>
+    </div>
+    <p id="pcredit">Moto 3D: «BMW S1000RR 2019» de <a href="https://sketchfab.com/3d-models/bmw-s1000rr-2019-f842e86791ae4820aa7d45f76ecc94dc" target="_blank" rel="noopener">VTX</a> · <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></p>
+  </aside>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
