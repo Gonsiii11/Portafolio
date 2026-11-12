@@ -74,6 +74,6 @@ export function createPage() {
     toggleExt: toggleExt,
     setGL: function (g) { gl = g; },
     /* no WebGL: show the plain-text notice instead of the scene */
-    showNoGL: function () { document.getElementById('nogl').hidden = false; }
+    showNoGL: function () { document.getElementById('nogl').hidden = false; document.getElementById('loading').hidden = true; }
   };
 }

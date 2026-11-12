@@ -73,6 +73,7 @@ h1 em { font-style: normal; color: var(--accent); }
 /* section pages: full screen under the header; the scene stays behind, blurred and dark (#app.reading) */
 #ui { z-index: 6; }  /* the header stays on top of the page */
 #app.reading #ui::before { opacity: 0; }
+#app.reading #nogl, #app.reading #loading { display: none; }  /* the header sits above the page; these must not */
 #gl { transition: filter 0.4s ease, transform 0.4s ease; }
 #app.reading #gl { filter: blur(14px) brightness(0.32) saturate(0.75); transform: scale(1.06); pointer-events: none; }
 #panel { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(11, 13, 16, 0.45); opacity: 0; visibility: hidden; transition: opacity 0.35s ease, visibility 0s linear 0.35s; outline: none; }
@@ -119,4 +120,12 @@ h2 { margin: 0; padding-right: 52px; font: 700 clamp(26px, 5vw, 34px)/1.08 var(-
 @media (max-width: 899px) { #pbody { padding-top: 184px; } }
 .sec { width: 100%; max-width: 720px; margin: 0 auto; }
 .sec[data-sec="projects"] { max-width: 1080px; }
+/* page typography: section pages read like a page, not a side card */
+.sec h2 { font-size: clamp(30px, 5vw, 48px); line-height: 1.05; }
+.sec .intro { font-size: clamp(18px, 2.2vw, 21px); line-height: 1.55; color: var(--fg); max-width: 56ch; }
+.sec .note { margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 15px; }
+/* projects: two columns from 900 px, one below */
+.pgrid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 900px) { .pgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pgrid .pcard { background: color-mix(in srgb, var(--panel-2) 92%, transparent); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

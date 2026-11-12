@@ -1,7 +1,8 @@
 # Portfolio de Iván Herrera González
 
 ## Qué es
-Web personal en 3D para buscar prácticas. El visitante ve una moto en primera persona (atardecer, carretera) y los mandos abren las secciones: cuadro de instrumentos = Sobre mí, maneta izquierda = Proyectos, maneta derecha (arranque) = Contacto, depósito = Ver la moto (la moto gira por fuera).
+Web personal en 3D para buscar prácticas. El visitante ve una moto en primera persona por una carretera de sierra. La pantalla TFT de la moto es el menú: un cuadro completo (hora, «busco prácticas», cuentarrevoluciones con velocidad y marcha reales, km recorridos) con tres opciones táctiles, Sobre mí · Proyectos · Contacto. Cada sección se abre como página a pantalla completa con la escena desenfocada detrás. El menú de arriba hace lo mismo y añade «Ver la moto» (la moto gira por fuera); es la vía para teclado, lectores de pantalla y la versión sin 3D.
+- Mensaje: primero que a Iván le gusta crear software y construir soluciones; la pasión por la automoción va al final, como nota personal (diseño en `docs/superpowers/specs/2026-11-12-paginas-y-tft-design.md`).
 
 ## Objetivo y tono
 - Llamativo y motivador, con foco en software de automoción, **sin cerrar puertas a otras vacantes de software**.
@@ -14,7 +15,7 @@ Web personal en 3D para buscar prácticas. El visitante ve una moto en primera p
 - `src/config.js`: colores, textos del cuadro y «reducir movimiento».
 - `src/pagina/`: lógica de la página, que funciona sin 3D (`pagina.js`: secciones, modos, «Ver la moto»; `creditos.js`).
 - `src/escena/`: la escena 3D. `escena.js` crea el renderizador, monta cada parte y lleva el bucle de fotogramas. `medidas.js` tiene las medidas compartidas (suelo, carretera, terreno y su altura `terH`), `carga.js` la carga por fases, `curvas.js` las curvas y `utiles.js` las texturas de canvas y sombras. Una parte por archivo: `cielo.js`, `luces.js`, `carretera.js`, `terreno.js` (con arcén e hierba), `mobiliario.js` (bionda e hitos), `bosque.js`, `rocas.js` y `deslizables.js` (lo que pasa al lado y vuelve atrás).
-- `src/moto/`: la moto, sus espejos, la pantalla y las zonas pulsables (`moto.js`) y el dibujo del cuadro (`tablero.js`).
+- `src/moto/`: la moto, sus espejos y la pantalla TFT (`moto.js`), el dibujo de la TFT (`tablero.js`) y su lógica pura con tests: filas del menú, toque, marcha y revoluciones, formatos (`tft.js`, probado en `tests/tft.test.js`).
 - `src/camara/`: vistas y encuadre (`camara.js`) y ratón, táctil y teclado (`controles.js`).
 - Cada parte de la escena es una función `createX(...)` que añade lo suyo a la escena y devuelve lo que el bucle necesita (normalmente `advance(step)` para avanzar con la moto).
 - `public/bike/`: moto convertida a un formato ligero propio (`bike.json` describe materiales y piezas, `bike.bin` la geometría cuantizada y comprimida con meshoptimizer, `tx/` las texturas). `bike.bin` se genera con `node herramientas/comprimir_moto.mjs` desde `modelos-fuente/moto/bike_raw.*` (sin comprimir), y el script verifica la descompresión con el decodificador de three r128.
@@ -24,6 +25,7 @@ Web personal en 3D para buscar prácticas. El visitante ve una moto en primera p
 npm install
 npm run dev      # servidor local
 npm run build    # genera dist/
+npm test         # tests de la lógica pura (node:test, sin dependencias)
 ```
 
 ## Reglas que no se rompen
