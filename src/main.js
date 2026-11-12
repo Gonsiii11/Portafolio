@@ -523,6 +523,30 @@ window.THREE = THREE;
       if (d.cc > 0) { m.clearcoat = d.cc; m.clearcoatRoughness = 0.12; }
       return m;
     }
+    /* rear-view mirrors: a camera on the bike looks backwards and renders into a small texture shown on both mirror
+       glasses (one primitive in the model). Each glass gets its own side of that picture, flipped like a real mirror:
+       the rear camera's right half is the rider's left, so the left glass maps to u 0.95 → 0.6 from its outer edge in. */
+    var MIRROR_PRIM = 'Object_79', mirrorMesh = null, mirrorTick = 0;
+    var mirrorEvery = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ? 2 : 1;  /* phones: every other frame */
+    var mirrorRT = new T.WebGLRenderTarget(512, 256);
+    mirrorRT.texture.encoding = T.sRGBEncoding;
+    var mirrorMat = new T.MeshBasicMaterial({ map: mirrorRT.texture, color: 0xd5dbe2, toneMapped: false });
+    var rearCam = new T.PerspectiveCamera(46, 2, 0.05, 700);
+    rearCam.position.set(0, 0.66, -0.4); rearCam.rotation.set(-0.05, Math.PI, 0, 'YXZ'); bike.add(rearCam);
+    function mirrorUVs(geo) {
+      var pos = geo.attributes.position, uv = geo.attributes.uv, k, b = { '-1': [9, -9, 9, -9], '1': [9, -9, 9, -9] };
+      for (k = 0; k < pos.count; k++) {  /* per side: |x| and y ranges */
+        var s = pos.getX(k) < 0 ? '-1' : '1', ax = Math.abs(pos.getX(k)), y = pos.getY(k);
+        b[s][0] = Math.min(b[s][0], ax); b[s][1] = Math.max(b[s][1], ax); b[s][2] = Math.min(b[s][2], y); b[s][3] = Math.max(b[s][3], y);
+      }
+      for (k = 0; k < pos.count; k++) {
+        var sd = pos.getX(k) < 0 ? '-1' : '1', r = b[sd];
+        var t = (r[1] - Math.abs(pos.getX(k))) / Math.max(1e-4, r[1] - r[0]);   /* 0 at the outer edge, 1 at the inner edge */
+        var u = sd === '-1' ? 0.95 - 0.35 * t : 0.05 + 0.35 * t;
+        uv.setXY(k, u, 0.25 + 0.5 * (pos.getY(k) - r[2]) / Math.max(1e-4, r[3] - r[2]));
+      }
+      uv.needsUpdate = true;
+    }
     function buildBike(meta, buf) {
       var mats = meta.materials.map(bikeMat);
       meta.prims.forEach(function (p) {
@@ -540,6 +564,7 @@ window.THREE = THREE;
         geo.setIndex(new T.BufferAttribute(new Uint16Array(buf, p.io, p.ic), 1));
         var mesh = new T.Mesh(geo, mats[p.m]);
         if (mesh.material.transparent) mesh.renderOrder = 2;
+        if (p.n === MIRROR_PRIM) { mirrorUVs(geo); mesh.material = mirrorMat; mirrorMesh = mesh; }
         bike.add(mesh);
       });
     }
@@ -771,6 +796,11 @@ window.THREE = THREE;
         dashTex.needsUpdate = true; dash.dirty = false;
       }
 
+      if (mirrorMesh && (mirrorTick++ % mirrorEvery) === 0) {  /* the glass is hidden while its own picture is drawn */
+        mirrorMesh.visible = false;
+        renderer.setRenderTarget(mirrorRT); renderer.render(scene, rearCam); renderer.setRenderTarget(null);
+        mirrorMesh.visible = true;
+      }
       renderer.render(scene, camera);
 
       if (cur === 'home') {
