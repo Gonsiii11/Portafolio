@@ -53,11 +53,20 @@ h1 { margin: 0; font: 700 clamp(32px, 9vw, 60px)/1.02 var(--font-display); lette
 h1 em { font-style: normal; color: var(--accent); }
 .lead { margin: 0; font-size: 16px; line-height: 1.6; color: #C9D0D9; max-width: 34ch; text-shadow: 0 1px 8px rgba(11,13,16,0.8); }
 #hint { margin: auto 0 0; align-self: center; padding: 6px 12px; border-radius: 999px; background: var(--glass); backdrop-filter: blur(6px); text-align: center; font: 500 12px var(--font-mono); letter-spacing: 0.08em; color: var(--fg); pointer-events: none; }
-#credit { margin: 0; align-self: center; max-width: 100%; box-sizing: border-box; padding: 5px 12px; border-radius: 12px; background: var(--glass); backdrop-filter: blur(6px); text-align: center; font: 400 11px var(--font-mono); letter-spacing: 0.04em; color: var(--muted); }
-#credit a { color: inherit; pointer-events: auto; }
+#credit { margin: 0; align-self: center; max-width: 100%; box-sizing: border-box; padding: 0 4px 0 12px; border-radius: 999px; background: var(--glass); backdrop-filter: blur(6px); text-align: center; font: 400 11px var(--font-mono); letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+/* the button keeps a 32px-tall hit area while the line stays one row of small text */
+.credbtn { min-height: 32px; padding: 0 8px; border: 0; background: none; color: var(--fg); font: inherit; letter-spacing: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.credbtn:hover { color: var(--accent); }
+/* full credits: a small card above the bottom line, over the scene and the section panel */
+#credits { position: absolute; z-index: 10; left: 50%; bottom: 56px; transform: translateX(-50%); width: min(460px, calc(100% - 32px)); box-sizing: border-box; padding: 16px 18px; border: 1px solid var(--line-2); border-radius: 18px; background: color-mix(in srgb, var(--panel) 96%, transparent); backdrop-filter: blur(14px); font: 400 12px/1.6 var(--font-mono); color: var(--muted); }
+#credits h2 { margin: 0 0 8px; padding: 0; font: 600 13px var(--font-body); color: var(--fg); letter-spacing: 0; }
+#credits ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+#credits b { font-weight: 600; color: var(--fg); }
+#credits a { color: inherit; }
 #loading { margin: 0; text-align: center; font: 500 12px var(--font-mono); letter-spacing: 0.08em; color: var(--accent); pointer-events: none; }
 #nogl { margin: 0; max-width: 40ch; padding: 12px 14px; border: 1px dashed var(--line-2); border-radius: 14px; color: var(--muted); font-size: 14px; }
 @media (max-width: 899px) { .lead { display: none; } #hero { max-width: none; } }
+@media (max-width: 399px) { #credit { white-space: normal; border-radius: 14px; } }
 
 /* pins over the 3D controls */
 #pins { position: absolute; inset: 0; pointer-events: none; overflow: hidden; transition: opacity 0.3s; }
@@ -74,7 +83,7 @@ h1 em { font-style: normal; color: var(--accent); }
 @media (max-width: 899px) { #panel { left: 0; right: 0; bottom: 0; height: min(52%, 460px); border-radius: 24px 24px 0 0; transform: translateY(105%); } }
 #close { position: absolute; top: 8px; right: 8px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--panel); color: var(--fg); display: grid; place-items: center; cursor: pointer; }
 #close:hover { border-color: var(--accent); }
-#pcredit { margin: 0; flex: none; padding: 8px 22px; border-top: 1px solid var(--line); font: 400 11px var(--font-mono); letter-spacing: 0.04em; color: var(--muted); text-align: center; }
+#pcredit { margin: 0; flex: none; padding: 2px 12px; border-top: 1px solid var(--line); font: 400 11px var(--font-mono); letter-spacing: 0.04em; color: var(--muted); text-align: center; }
 #pcredit a { color: inherit; }
 #pbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-block: 22px 28px; padding-left: max(22px, env(safe-area-inset-left, 0px)); padding-right: max(22px, env(safe-area-inset-right, 0px)); }
 .sec { display: flex; flex-direction: column; gap: 16px; }
