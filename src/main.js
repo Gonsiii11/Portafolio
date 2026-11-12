@@ -210,6 +210,19 @@ window.THREE = THREE;
     roadTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     var road = new T.Mesh(new T.PlaneGeometry(ROAD_W, ROAD_LEN), new T.MeshStandardMaterial({ map: roadTex, roughness: 0.92, metalness: 0 }));
     road.rotation.x = -Math.PI / 2; road.position.set(-1.75, GROUND + 0.002, 10 - ROAD_LEN / 2); scene.add(road);
+
+    /* real asphalt: texture from «Street road» by saifurrehman (CC BY 4.0), rotated so the lanes run along v.
+       One tile = 28 m of road. Swaps in when loaded; the painted road stays if it fails. */
+    new T.TextureLoader().load('carretera/asfalto.jpg', function (tex) {
+      tex.encoding = T.sRGBEncoding;
+      tex.wrapS = tex.wrapT = T.RepeatWrapping;
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      PERIOD = 28;
+      tex.repeat.set(1, ROAD_LEN / PERIOD);
+      tex.offset.y = roadTex.offset.y;
+      road.material.map = tex; road.material.needsUpdate = true;
+      roadTex.dispose(); roadTex = tex;
+    });
     var ground = new T.Mesh(new T.PlaneGeometry(900, 900), new T.MeshStandardMaterial({ color: 0x0e1511, roughness: 1, metalness: 0 }));
     ground.rotation.x = -Math.PI / 2; ground.position.set(0, GROUND, -300); scene.add(ground);
 

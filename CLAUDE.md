@@ -24,13 +24,16 @@ npm run build    # genera dist/
 1. **Licencia del modelo:** la moto es «BMW S1000RR 2019» de VTX (https://sketchfab.com/3d-models/bmw-s1000rr-2019-f842e86791ae4820aa7d45f76ecc94dc), CC BY-NC-SA 4.0. El crédito tiene que verse siempre en la web (hoy está en `#credit`). Solo uso no comercial; si se modifica el modelo, se mantiene la misma licencia. Texto original en `public/bike/LICENSE-modelo.txt`.
 2. **Nada de la M 1000 R de Iván** (ni modelo ni fotos) por ahora; ese contenido se tratará aparte.
 3. Cualquier modelo 3D nuevo (por ejemplo una carretera) debe tener licencia que permita su uso y llevar su crédito.
+   - Carretera: textura de «Street road» de saifurrehman (https://sketchfab.com/3d-models/street-road-a01b47f299b24ac99a1dcd8e2111364b), CC BY 4.0. Solo se usa la textura del asfalto (`public/carretera/asfalto.jpg`); crédito en `#credit` y `#pcredit`, licencia en `public/carretera/LICENSE-modelo.txt`.
+   - Fondo: panorama «Rolling Hills» de Poly Haven (CC0, no exige crédito), convertido con `herramientas/hdr2jpg.py` a `public/fondo/rolling_hills.jpg`.
+   - Los originales descargados van en `modelos-fuente/` (fuera de git).
 4. Accesible y responsive: tiene que funcionar a 400 px de ancho, respetar `prefers-reduced-motion` y tener la versión sin 3D (`#nogl`).
 5. Los datos de contacto y proyectos entre corchetes `[...]` son huecos por rellenar: no sustituirlos por datos inventados.
 
 ## Pendiente (por orden)
 1. Rellenar Contacto (email, LinkedIn, GitHub, enlace al CV) y los proyectos reales.
 2. Inclinación del móvil para mirar alrededor (`DeviceOrientationEvent`; en iPhone pide permiso con `requestPermission` desde un toque).
-3. Sustituir la carretera hecha por código por un modelo glTF real (descargado de Sketchfab con licencia válida; hay que reducirlo igual que la moto).
+3. Paisaje de sierra con pinos (rama `paisaje/*`): hecho el fondo y el asfalto; faltan el terreno a los lados, los pinos (modelos 3D) y las rocas.
 4. Separar `main.js` en módulos (escena, moto, interfaz, datos de proyectos).
 5. Probar en móvil y escritorio, y mirar el rendimiento.
 6. Publicar en Vercel o Netlify.
