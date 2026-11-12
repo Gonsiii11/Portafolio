@@ -211,6 +211,9 @@ window.THREE = THREE;
        patch, a hint of lean. The bike itself, the sky panorama and the camera are neither bent nor rolled. */
     var CURVE_P = 1500, CURVE = [[30, 2, 0], [7, 5, 1.3], [1.2, 11, 4.1]];  /* tightest bend ~133 m radius */  /* amplitude (m), cycles per CURVE_P, phase */
     CURVE.forEach(function (c) { c.push(Math.PI * 2 * c[1] / CURVE_P); });   /* c[3] = angular frequency */
+    /* the bend is full for the first CURVE_NEAR metres and eases down to CURVE_FAR_KEEP by CURVE_FAR, so the road curves
+       where you look while the far hills and pines stay almost still (Iván wants a calm background) */
+    var CURVE_NEAR = 100, CURVE_FAR = 250, CURVE_FAR_KEEP = 0.15;
     var curveU = { value: 0 }, leanU = { value: 0 }, travelled = 0;
     function curveD2(s) { var v = 0; CURVE.forEach(function (c) { v -= c[0] * c[3] * c[3] * Math.sin(c[3] * s + c[2]); }); return v; }
     var CURVE_GLSL = [
@@ -219,6 +222,7 @@ window.THREE = THREE;
       'float cD( float s ) { return ' + CURVE.map(function (c) { return (c[0] * c[3]).toFixed(7) + ' * cos( ' + c[3].toFixed(7) + ' * s + ' + c[2].toFixed(3) + ' )'; }).join(' + ') + '; }',
       'vec4 bendWorld( vec4 w, float amt ) {',
       '  float d = -w.z;',
+      '  amt *= 1.0 - ' + (1 - CURVE_FAR_KEEP).toFixed(2) + ' * smoothstep( ' + CURVE_NEAR.toFixed(1) + ', ' + CURVE_FAR.toFixed(1) + ', d );  /* far hills barely swing */',
       '  w.x += amt * ( cX( uCurveS + d ) - cX( uCurveS ) - cD( uCurveS ) * d );',
       '  float c = cos( uLean ), sn = sin( uLean ); vec2 p = vec2( w.x, w.y - ( ' + GROUND.toFixed(3) + ' ) );',
       '  w.xy = vec2( c * p.x - sn * p.y, sn * p.x + c * p.y + ( ' + GROUND.toFixed(3) + ' ) );',
@@ -1137,7 +1141,7 @@ window.THREE = THREE;
       }
 
       /* camera */
-      var swayYaw = (!reduce && cur === 'home' && now - lastInteract > 2500) ? Math.sin(now * 0.0004) * 0.005 : 0;  /* idle sway, kept tiny so the background stays calm */
+      var swayYaw = 0;  /* no idle sway: the background stays still */
       yaw += (yawT + swayYaw - yaw) * k2; pitch += (pitchT - pitch) * k2;
       if (ext && !reduce && now - lastInteract > 2500 && !drag) spinT += dt * 0.35;
       rig.rotation.y += ((ext ? spinT : 0) - rig.rotation.y) * (reduce ? 1 : 1 - Math.exp(-dt * 7));
@@ -1192,7 +1196,7 @@ window.THREE = THREE;
       if (!reduce) grassTime.value = now / 1000;
       /* a hint of lean into the bend: a third of the physical angle atan(v²·curvature / g), capped at ~4°, eased slowly,
          so the horizon tilts a little instead of swinging the whole background around */
-      var LEAN_SHARE = 0.33, LEAN_MAX = 0.015;  /* under 1°: the sky stays still, so the ground barely tilts */
+      var LEAN_SHARE = 0, LEAN_MAX = 0;  /* off: Iván wants the background still (the hook stays for later) */
       var leanT = Math.max(-LEAN_MAX, Math.min(LEAN_MAX, LEAN_SHARE * Math.atan(speed * speed * curveD2(curveU.value) / 9.81)));
       leanU.value += (leanT - leanU.value) * (1 - Math.exp(-dt * 1.5));
       bendScene();
