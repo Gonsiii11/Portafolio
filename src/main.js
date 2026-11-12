@@ -478,7 +478,7 @@ window.THREE = THREE;
        Layout: a FOREST_S-metre block (twice, back to back) that slides with the road and jumps back FOREST_S, a multiple
        of the terrain period, so every trunk keeps standing on the ground. Groves with clearings come from a smooth
        density field; type 8 (a dead snag) is kept rare. Near trees cast shadows, far ones don't (cheaper). */
-    var FOREST_S = 360, FOREST_Z0 = 8, forest = new T.Group();
+    var FOREST_S = 360, FOREST_Z0 = 8, FOREST_FADE = [320, 380], forest = new T.Group();
     forest.position.z = FOREST_Z0; scene.add(forest);
     afterBike.then(function () { new GLTFLoader().load('pinos/scene.gltf', function (gltf) {  /* phase 2 */
       gltf.scene.updateMatrixWorld(true);
@@ -490,7 +490,19 @@ window.THREE = THREE;
         var m = o.material;
         if (!mats[m.name]) {
           if (m.map && m.transparent) { m.transparent = false; m.alphaTest = 0.2; m.alphaToCoverage = true; m.depthWrite = true; }
-          m.side = T.DoubleSide; m.envMapIntensity = 0.35; m.needsUpdate = true; mats[m.name] = m;
+          m.side = T.DoubleSide; m.envMapIntensity = 0.35; mats[m.name] = m;
+          /* the forest reaches farther than the terrain does (its far edge sits 396-456 m ahead): trees shrink to nothing
+             between FOREST_FADE[0] and [1] metres ahead, inside the fog and always before the terrain ends */
+          m.onBeforeCompile = function (sh) {
+            sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', [
+              '#include <begin_vertex>',
+              '#ifdef USE_INSTANCING',
+              '  float fz = ( modelMatrix * instanceMatrix * vec4( 0.0, 0.0, 0.0, 1.0 ) ).z;',
+              '  transformed *= smoothstep( ' + (-FOREST_FADE[1]).toFixed(1) + ', ' + (-FOREST_FADE[0]).toFixed(1) + ', fz );',
+              '#endif'
+            ].join('\n'));
+          };
+          m.needsUpdate = true;
         }
         var g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld);
         parts[id] = parts[id] || {};
