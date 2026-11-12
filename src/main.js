@@ -260,27 +260,52 @@ window.THREE = THREE;
     });
     function groundY(x, zWorld) { return GROUND + terH(x, zWorld - ground.position.z); }
 
-    /* street lamps and trees that slide past */
-    var props = [];
-    var poleMat = new T.MeshBasicMaterial({ color: 0x1b1f25 }), lampMat = new T.MeshBasicMaterial({ color: 0xffe2b4 });
-    var glowTex = canvasTex(64, 64, function (x, w, h) {
-      var g = x.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
-      g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.3, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-      x.fillStyle = g; x.fillRect(0, 0, w, h);
+    /* mountain-road furniture that slides past: guardrail («bionda») on some stretches, delineator posts («hitos de arista») elsewhere.
+       All built here, no third-party models. Everything wraps every SPAN metres; x > 0 side is the right-hand side. */
+    var props = [], SPAN = 336, EDGE_R = ROAD_CX + ROAD_W / 2, EDGE_L = ROAD_CX - ROAD_W / 2;
+    function edgeX(side, off) { return side > 0 ? EDGE_R + off : EDGE_L - off; }
+    /* guardrail: [side, rear z, length]. Built from its rear end toward +z so it only wraps once fully behind the rider */
+    var RAILS = [[1, -150, 72], [1, -310, 48], [-1, -66, 60], [-1, -250, 36]];
+    var steelMat = new T.MeshStandardMaterial({ color: 0x7c838a, metalness: 0.85, roughness: 0.5, envMapIntensity: 0.55, side: T.DoubleSide });
+    var postMat = new T.MeshStandardMaterial({ color: 0x50555a, metalness: 0.7, roughness: 0.6, envMapIntensity: 0.4 });
+    var wShape = (function () {  /* W-beam cross-section: x = toward the road, y = up (metres) */
+      var c = [[0, -0.155], [0.07, -0.11], [0.07, -0.04], [0.02, 0], [0.07, 0.04], [0.07, 0.11], [0, 0.155]], s = new T.Shape(), k;
+      s.moveTo(c[0][0], c[0][1]);
+      for (k = 1; k < c.length; k++) s.lineTo(c[k][0], c[k][1]);
+      for (k = c.length - 1; k >= 0; k--) s.lineTo(c[k][0] - 0.012, c[k][1]);
+      return s;
+    })();
+    var railPostGeo = new T.BoxGeometry(0.05, 0.75, 0.1), spacerGeo = new T.BoxGeometry(0.12, 0.2, 0.08);
+    RAILS.forEach(function (r) {
+      var g = new T.Group(), len = r[2];
+      var rail = new T.Mesh(new T.ExtrudeGeometry(wShape, { depth: len, bevelEnabled: false }), steelMat);
+      rail.position.set(0, GROUND + 0.6, 0); g.add(rail);
+      for (var z = 1; z < len; z += 4) {
+        var p = new T.Mesh(railPostGeo, postMat); p.position.set(-0.2, GROUND + 0.375, z); g.add(p);
+        var sp = new T.Mesh(spacerGeo, postMat); sp.position.set(-0.08, GROUND + 0.6, z); g.add(sp);
+      }
+      g.position.set(edgeX(r[0], 0.9), 0, r[1]);
+      if (r[0] > 0) g.scale.x = -1;  /* local +x must point at the road */
+      scene.add(g); props.push({ obj: g, zMax: 8, span: SPAN });
     });
-    var glowMat = new T.SpriteMaterial({ map: glowTex, color: 0xffb070, blending: T.AdditiveBlending, transparent: true, depthWrite: false });
-    var poleGeo = new T.CylinderGeometry(0.07, 0.09, 7.5, 8), armGeo = new T.BoxGeometry(1.6, 0.06, 0.06), headGeo = new T.BoxGeometry(0.4, 0.1, 0.22);
-    function addLamp(side, z) {
-      var g = new T.Group();
-      var pole = new T.Mesh(poleGeo, poleMat); pole.position.y = GROUND + 3.75; g.add(pole);
-      var arm = new T.Mesh(armGeo, poleMat); arm.position.set(-0.8, GROUND + 7.4, 0); g.add(arm);
-      var head = new T.Mesh(headGeo, lampMat); head.position.set(-1.5, GROUND + 7.32, 0); g.add(head);
-      var glow = new T.Sprite(glowMat); glow.position.set(-1.5, GROUND + 7.2, 0); glow.scale.set(4, 4, 1); g.add(glow);
-      g.position.set(side > 0 ? 2.8 : -6.8, 0, z);
-      if (side < 0) g.scale.x = -1;
-      scene.add(g); props.push({ obj: g, zMax: 8, span: 336 });
+    /* delineator posts: white, black band, a reflector facing the rider; every 24 m where there is no guardrail */
+    var hitoGeo = new T.BoxGeometry(0.1, 1.05, 0.12), bandGeo = new T.BoxGeometry(0.104, 0.24, 0.124), reflGeo = new T.PlaneGeometry(0.05, 0.14);
+    var hitoMat = new T.MeshStandardMaterial({ color: 0xe9e7e1, roughness: 0.6 }), bandMat = new T.MeshStandardMaterial({ color: 0x0c0c0d, roughness: 0.85, envMapIntensity: 0.15 });
+    var reflMat = new T.MeshBasicMaterial({ color: 0xfff2d8 });
+    function underRail(side, z) {
+      return RAILS.some(function (r) { return r[0] === side && z > r[1] - 3 && z < r[1] + r[2] + 3; });
     }
-    for (i = 0; i < 12; i++) { addLamp(1, 6 - i * 28); addLamp(-1, -8 - i * 28); }
+    [1, -1].forEach(function (side) {
+      for (var z = side > 0 ? 4 : -8; z > 8 - SPAN; z -= 24) {
+        if (underRail(side, z)) continue;
+        var g = new T.Group();
+        var post = new T.Mesh(hitoGeo, hitoMat); post.position.y = GROUND + 0.525; g.add(post);
+        var band = new T.Mesh(bandGeo, bandMat); band.position.y = GROUND + 0.84; g.add(band);
+        var refl = new T.Mesh(reflGeo, reflMat); refl.position.set(0, GROUND + 0.84, 0.063); g.add(refl);
+        g.position.set(edgeX(side, 0.8), 0, z);
+        scene.add(g); props.push({ obj: g, zMax: 8, span: SPAN });
+      }
+    });
     var treeGeo = new T.ConeGeometry(1.5, 5.5, 7), treeMat = new T.MeshBasicMaterial({ color: 0x0b1210 }), treeProps = [];
     for (i = 0; i < 52; i++) {
       var tr = new T.Mesh(treeGeo, treeMat), sc = 0.7 + Math.random() * 1.1, sd0 = i % 2 ? 1 : -1;

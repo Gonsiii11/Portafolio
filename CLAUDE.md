@@ -36,7 +36,7 @@ npm run build    # genera dist/
 ## Pendiente (por orden)
 1. Rellenar Contacto (email, LinkedIn, GitHub, enlace al CV) y los proyectos reales.
 2. Inclinación del móvil para mirar alrededor (`DeviceOrientationEvent`; en iPhone pide permiso con `requestPermission` desde un toque).
-3. Paisaje de sierra con pinos (rama `paisaje/*`): hechos el fondo, el asfalto, los pinos, el terreno a los lados y las rocas; falta cambiar las farolas.
+3. Paisaje de sierra con pinos (rama `paisaje/*`): hechos el fondo, el asfalto, los pinos, el terreno a los lados, las rocas y el mobiliario de carretera (hitos de arista y bionda, hechos con geometría propia en lugar de las farolas).
 4. Separar `main.js` en módulos (escena, moto, interfaz, datos de proyectos).
 5. Probar en móvil y escritorio, y mirar el rendimiento.
 6. Publicar en Vercel o Netlify.
