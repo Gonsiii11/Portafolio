@@ -188,7 +188,7 @@ window.THREE = THREE;
       scene.background = tex;
       scene.remove(sky); scene.remove(mtn);
       scene.fog.color.setHex(HAZE_DAY); scene.fog.near = 60; scene.fog.far = 600;
-      ground.material.color.setHex(0x3a2f1c); ground.material.envMapIntensity = 0.3;
+      ground.material.color.setHex(0xc9c4b4); ground.material.envMapIntensity = 0.3;
       try {
         var pmE = new T.PMREMGenerator(renderer);
         scene.environment = pmE.fromEquirectangular(tex).texture;
@@ -225,8 +225,40 @@ window.THREE = THREE;
       road.material.map = tex; road.material.needsUpdate = true;
       roadTex.dispose(); roadTex = tex;
     });
-    var ground = new T.Mesh(new T.PlaneGeometry(900, 900), new T.MeshStandardMaterial({ color: 0x0e1511, roughness: 1, metalness: 0 }));
-    ground.rotation.x = -Math.PI / 2; ground.position.set(0, GROUND, -300); scene.add(ground);
+    /* terrain: a flat shoulder beside the road, then banks and rolling ground rising to both sides.
+       Heights repeat every TER_P metres along z, so the mesh slides with the road and jumps back one period.
+       Texture: «Aerial Grass Rock» from Poly Haven (CC0), one tile = 15 m. */
+    var TER_P = 60, TER_W = 440, TER_L = 480, TER_SEG = 160, ROAD_CX = -1.75, TER_Z0 = 24 - TER_L / 2;
+    function terH(x, z) {
+      var d = Math.abs(x - ROAD_CX) - ROAD_W / 2 - 2.5;
+      if (d <= 0) return 0;
+      var s = Math.min(1, d / 16); s = s * s * (3 - 2 * s);
+      var w = Math.PI * 2 / TER_P;
+      var n = Math.sin(z * w + x * 0.07) * 1.6 + Math.sin(z * w * 2 - x * 0.19 + 1.3) * 0.7 + Math.sin(z * w * 3 + x * 0.41 + 2.1) * 0.3;
+      return s * (d * 0.05 + n * (0.35 + Math.min(1.4, d / 40)));
+    }
+    var terGeo = new T.PlaneGeometry(TER_W, TER_L, TER_SEG, TER_SEG);
+    terGeo.rotateX(-Math.PI / 2);
+    (function () {
+      var p = terGeo.attributes.position, uv = terGeo.attributes.uv, k, u, x, z;
+      for (k = 0; k < p.count; k++) {
+        u = p.getX(k) / (TER_W / 2);  /* columns bunch up near the road, spread out far away */
+        x = ROAD_CX + (u < 0 ? -1 : 1) * Math.pow(Math.abs(u), 1.8) * TER_W / 2;
+        z = p.getZ(k);
+        p.setXYZ(k, x, terH(x, z), z);
+        uv.setXY(k, x / 15, -z / 15);
+      }
+      terGeo.computeVertexNormals();
+    })();
+    var ground = new T.Mesh(terGeo, new T.MeshStandardMaterial({ color: 0x0e1511, roughness: 1, metalness: 0 }));
+    ground.position.set(0, GROUND, TER_Z0); scene.add(ground);
+    new T.TextureLoader().load('terreno/hierba.jpg', function (tex) {
+      tex.encoding = T.sRGBEncoding;
+      tex.wrapS = tex.wrapT = T.RepeatWrapping;
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      ground.material.map = tex; ground.material.needsUpdate = true;
+    });
+    function groundY(x, zWorld) { return GROUND + terH(x, zWorld - ground.position.z); }
 
     /* street lamps and trees that slide past */
     var props = [];
@@ -254,7 +286,8 @@ window.THREE = THREE;
       var tr = new T.Mesh(treeGeo, treeMat), sc = 0.7 + Math.random() * 1.1, sd0 = i % 2 ? 1 : -1;
       tr.scale.set(sc, sc, sc);
       tr.position.set(sd0 * (6 + Math.random() * 40) + (sd0 > 0 ? 0 : -3), GROUND + 2.75 * sc, 8 - Math.random() * 340);
-      scene.add(tr); props.push({ obj: tr, zMax: 8, span: 348 }); treeProps.push(props[props.length - 1]);
+      scene.add(tr); props.push({ obj: tr, zMax: 8, span: 348, lift: 2.75 * sc }); treeProps.push(props[props.length - 1]);
+      tr.position.y = groundY(tr.position.x, tr.position.z) + 2.75 * sc;
     }
 
     /* Scots pines («Scots Pine Trees Set» by Maksim Batyrev, CC BY 4.0). The set has 9 trees laid out on a grid;
@@ -299,8 +332,8 @@ window.THREE = THREE;
         });
         g.scale.setScalar(6 + Math.random() * 4);
         g.rotation.y = Math.random() * Math.PI * 2;
-        g.position.set(pr.obj.position.x, GROUND, pr.obj.position.z);
-        scene.remove(pr.obj); scene.add(g); pr.obj = g;
+        g.position.set(pr.obj.position.x, groundY(pr.obj.position.x, pr.obj.position.z) - 0.15, pr.obj.position.z);
+        scene.remove(pr.obj); scene.add(g); pr.obj = g; pr.lift = -0.15;
       });
     });
 
@@ -593,9 +626,12 @@ window.THREE = THREE;
       var step = speed * dt;
       if (step > 0) {
         roadTex.offset.y = (roadTex.offset.y + step / PERIOD) % 1;
+        ground.position.z += step;
+        if (ground.position.z > TER_Z0 + TER_P) ground.position.z -= TER_P;
         for (i = 0; i < props.length; i++) {
           var po = props[i].obj; po.position.z += step;
           if (po.position.z > props[i].zMax) po.position.z -= props[i].span;
+          if (props[i].lift !== undefined) po.position.y = groundY(po.position.x, po.position.z) + props[i].lift;
         }
       }
 

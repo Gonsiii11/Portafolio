@@ -1,0 +1,8 @@
+Textura del terreno:
+* título:	Aerial Grass Rock
+* fuente:	https://polyhaven.com/a/aerial_grass_rock
+* autor:	Rob Tuytel (Poly Haven)
+* licencia:	CC0 1.0 (dominio público, no exige crédito) — https://creativecommons.org/publicdomain/zero/1.0/
+
+Cambios para esta web: solo el mapa de color (diffuse) a 1024 px, guardado como `hierba.jpg`.
+Una baldosa equivale a 15 × 15 m.
