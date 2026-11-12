@@ -471,18 +471,15 @@ window.THREE = THREE;
         shadowsOn(g); scene.add(g); props.push({ obj: g, zMax: 8, span: SPAN });
       }
     });
-    var treeGeo = new T.ConeGeometry(1.5, 5.5, 7), treeMat = new T.MeshBasicMaterial({ color: 0x0b1210 }), treeProps = [];
-    for (i = 0; i < 52; i++) {
-      var tr = new T.Mesh(treeGeo, treeMat), sc = 0.7 + Math.random() * 1.1, sd0 = i % 2 ? 1 : -1;
-      tr.scale.set(sc, sc, sc);
-      tr.position.set(sd0 * (6 + Math.random() * 40) + (sd0 > 0 ? 0 : -3), GROUND + 2.75 * sc, 8 - Math.random() * 340);
-      scene.add(tr); props.push({ obj: tr, zMax: 8, span: 348, lift: 2.75 * sc }); treeProps.push(props[props.length - 1]);
-      tr.position.y = groundY(tr.position.x, tr.position.z) + 2.75 * sc;
-    }
-
-    /* Scots pines («Scots Pine Trees Set» by Maksim Batyrev, CC BY 4.0). The set has 9 trees laid out on a grid;
-       each one is baked to its own geometry (one per material), stood on y = 0 and scaled to 1 m tall,
-       then every placeholder cone is swapped for a random pine. If loading fails, the cones stay. */
+    /* ---------- pine forest («Scots Pine Trees Set» by Maksim Batyrev, CC BY 4.0) ----------
+       The set has 9 trees; each is baked to one geometry per material, stood on y = 0 and scaled to 1 m tall, and its
+       foliage is doubled (a turned, wider copy merged in) so crowns read full. Trees are drawn as instances: one
+       InstancedMesh per tree type and material, so hundreds of pines cost a few draw calls and no extra download.
+       Layout: a FOREST_S-metre block (twice, back to back) that slides with the road and jumps back FOREST_S, a multiple
+       of the terrain period, so every trunk keeps standing on the ground. Groves with clearings come from a smooth
+       density field; type 8 (a dead snag) is kept rare. Near trees cast shadows, far ones don't (cheaper). */
+    var FOREST_S = 360, FOREST_Z0 = 8, forest = new T.Group();
+    forest.position.z = FOREST_Z0; scene.add(forest);
     afterBike.then(function () { new GLTFLoader().load('pinos/scene.gltf', function (gltf) {  /* phase 2 */
       gltf.scene.updateMatrixWorld(true);
       var parts = {}, mats = {};
@@ -499,7 +496,10 @@ window.THREE = THREE;
         parts[id] = parts[id] || {};
         (parts[id][m.name] = parts[id][m.name] || []).push(g);
       });
-      var types = Object.keys(parts).map(function (id) {
+      var ids = Object.keys(parts);
+      if (!ids.length) return;
+      var types = {};
+      ids.forEach(function (id) {
         var list = [], box = new T.Box3();
         Object.keys(parts[id]).forEach(function (mn) {
           var geos = parts[id][mn], merged = geos.length > 1 ? BufferGeometryUtils.mergeBufferGeometries(geos) : geos[0];
@@ -508,22 +508,58 @@ window.THREE = THREE;
         list.forEach(function (p) { p[0].computeBoundingBox(); box.union(p[0].boundingBox); });
         var c = box.getCenter(new T.Vector3()), s = 1 / (box.max.y - box.min.y);
         var mtx = new T.Matrix4().makeScale(s, s, s).multiply(new T.Matrix4().makeTranslation(-c.x, -box.min.y, -c.z));
-        list.forEach(function (p) { p[0].applyMatrix4(mtx); p[0].computeBoundingSphere(); });
-        return list;
-      });
-      if (!types.length) return;
-      treeProps.forEach(function (pr) {
-        var t = types[Math.floor(Math.random() * types.length)], g = new T.Group();
-        t.forEach(function (p) {
-          g.add(new T.Mesh(p[0], p[1]));
-          if (p[1].alphaTest > 0) {  /* foliage: a second copy, turned and a touch wider, fills out the sparse crown */
-            var f = new T.Mesh(p[0], p[1]); f.rotation.y = 1.2 + Math.random() * 0.6; f.scale.set(1.12, 0.94, 1.12); g.add(f);
+        list.forEach(function (p) {
+          p[0].applyMatrix4(mtx);
+          if (p[1].alphaTest > 0) {  /* fuller crown: merge in a copy turned ~80° and a touch wider */
+            var extra = p[0].clone().applyMatrix4(new T.Matrix4().makeRotationY(1.4).multiply(new T.Matrix4().makeScale(1.12, 0.94, 1.12)));
+            p[0] = BufferGeometryUtils.mergeBufferGeometries([p[0], extra]) || p[0];
           }
         });
-        g.scale.setScalar(6 + Math.random() * 4);
-        g.rotation.y = Math.random() * Math.PI * 2;
-        g.position.set(pr.obj.position.x, groundY(pr.obj.position.x, pr.obj.position.z) - 0.15, pr.obj.position.z);
-        scene.remove(pr.obj); shadowsOn(g); scene.add(g); pr.obj = g; pr.lift = -0.15;
+        types[id] = list;
+      });
+      /* tree type weights: the dead snag (8) is rare */
+      var pool = [];
+      ids.forEach(function (id) { for (var w = 0; w < (id === '8' ? 1 : 10); w++) pool.push(id); });
+      /* density of the groves: smooth bumps along the road, different on each side */
+      function grove(x, z, side) {
+        var v = Math.sin(z * 0.019 + side * 1.9) * 0.55 + Math.sin(z * 0.047 + x * 0.031 + side) * 0.35 + Math.sin(x * 0.08 - z * 0.011) * 0.25;
+        return Math.max(0, Math.min(1, 0.5 + v));
+      }
+      var perBlock = TIER > 1 ? 380 : 150, placed = { near: {}, far: {} }, tries = 0, n = 0;
+      var zToTer = FOREST_Z0 - TER_Z0;  /* terrain-local z = forest-local z + this (stays true mod TER_P) */
+      while (n < perBlock && tries++ < perBlock * 30) {
+        var side = Math.random() < 0.5 ? -1 : 1, rr = Math.random();
+        var d = 5 + 120 * rr * rr;  /* metres past the asphalt edge: more trees near, fewer far */
+        var x = ROAD_CX + side * (ROAD_W / 2 + d), z = -Math.random() * FOREST_S;
+        var dens = grove(x, z, side) * (d < 10 ? 0.35 : 1);
+        if (Math.random() > dens) continue;
+        var id = pool[Math.floor(Math.random() * pool.length)], band = d < 32 ? 'near' : 'far';
+        var h = 8 + Math.random() * 7 + (d > 40 ? 3 : 0);  /* metres tall */
+        var y = terH(x, z + zToTer) - 0.15;
+        (placed[band][id] = placed[band][id] || []).push([x, y, z, h, Math.random() * Math.PI * 2]);
+        n++;
+      }
+      var m4 = new T.Matrix4(), q = new T.Quaternion(), sv = new T.Vector3(), pv = new T.Vector3(), UPF = new T.Vector3(0, 1, 0);
+      ['near', 'far'].forEach(function (band) {
+        Object.keys(placed[band]).forEach(function (id) {
+          var trees = placed[band][id];
+          types[id].forEach(function (p) {
+            var im = new T.InstancedMesh(p[0], p[1], trees.length * 2), k = 0;
+            for (var b = 0; b < 2; b++) {  /* two copies of the block, back to back */
+              trees.forEach(function (t) {
+                q.setFromAxisAngle(UPF, t[4]); sv.set(t[3], t[3], t[3]); pv.set(t[0], t[1], t[2] - b * FOREST_S);
+                im.setMatrixAt(k++, m4.compose(pv, q, sv));
+              });
+            }
+            im.frustumCulled = false;  /* r128 culls instanced meshes by one tree's bounds */
+            im.receiveShadow = true;
+            im.castShadow = band === 'near';
+            if (im.castShadow && p[1].alphaTest > 0 && p[1].map) {
+              im.customDepthMaterial = depthMats[p[1].uuid] = depthMats[p[1].uuid] || new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map: p[1].map, alphaTest: p[1].alphaTest, side: T.DoubleSide });
+            }
+            forest.add(im);
+          });
+        });
       });
     }); });
 
@@ -898,6 +934,8 @@ window.THREE = THREE;
       if (step > 0) {
         roadTex.offset.y = (roadTex.offset.y + step / PERIOD) % 1;
         ground.position.z += step;
+        forest.position.z += step;
+        if (forest.position.z > FOREST_Z0 + FOREST_S) forest.position.z -= FOREST_S;
         if (ground.position.z > TER_Z0 + TER_P) ground.position.z -= TER_P;
         for (i = 0; i < props.length; i++) {
           var po = props[i].obj; po.position.z += step;
