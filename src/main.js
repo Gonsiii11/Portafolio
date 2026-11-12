@@ -133,7 +133,7 @@ window.THREE = THREE;
     renderer.toneMappingExposure = 1.05;
     renderer.setClearColor(0x0B0D10, 1);
 
-    var GROUND = -0.97, HAZE = 0x6a3b3f;
+    var GROUND = -0.97, HAZE = 0x6a3b3f, HAZE_DAY = 0x8a8170;
     var scene = new T.Scene();
     scene.fog = new T.Fog(HAZE, 30, 260);
     var camera = new T.PerspectiveCamera(55, 1, 0.02, 700);
@@ -177,6 +177,22 @@ window.THREE = THREE;
     });
     var mtn = new T.Mesh(new T.CylinderGeometry(300, 300, 36, 64, 1, true), new T.MeshBasicMaterial({ map: mtnTex, transparent: true, side: T.BackSide, fog: false, depthWrite: false }));
     mtn.position.y = GROUND + 14; scene.add(mtn);
+
+    /* real panorama (Poly Haven «Rolling Hills», CC0), pre-rotated so the sun sits ahead at u = 0.23.
+       Until it loads (or if it fails) the painted sky above stays in place. */
+    new T.TextureLoader().load('fondo/rolling_hills.jpg', function (tex) {
+      tex.encoding = T.sRGBEncoding;
+      tex.mapping = T.EquirectangularReflectionMapping;
+      scene.background = tex;
+      scene.remove(sky); scene.remove(mtn);
+      scene.fog.color.setHex(HAZE_DAY); scene.fog.near = 60; scene.fog.far = 600;
+      ground.material.color.setHex(0x3a2f1c); ground.material.envMapIntensity = 0.3;
+      try {
+        var pmE = new T.PMREMGenerator(renderer);
+        scene.environment = pmE.fromEquirectangular(tex).texture;
+        pmE.dispose();
+      } catch (e) {}
+    });
 
     /* road + ground */
     var ROAD_W = 7, ROAD_LEN = 360, PERIOD = 9;
