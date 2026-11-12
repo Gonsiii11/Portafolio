@@ -10,4 +10,4 @@ Model License:
 If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
 This work is based on "Scots Pine Trees Set" (https://sketchfab.com/3d-models/scots-pine-trees-set-422b961ff3d14e7baa7e9077572b2247) by Maksim Batyrev (https://sketchfab.com/c3posw01) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 
-Cambios para esta web: texturas reducidas (1024/512 px); no se usa el plano de suelo «Box001»; los árboles se colocan por separado en la escena.
+Cambios para esta web: texturas reducidas (1024/512 px) y en WebP; follaje engrosado; no se usa el plano de suelo «Box001»; los árboles se colocan por separado en la escena.

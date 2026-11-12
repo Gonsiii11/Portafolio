@@ -533,8 +533,9 @@ window.THREE = THREE;
       var files = ['rocas/granito_a.glb', 'rocas/granito_b.glb'], kinds = [], left = files.length;
       afterBike.then(function () { files.forEach(function (f, n) {  /* phase 2 */
         new GLTFLoader().load(f, function (gltf) {
-          gltf.scene.traverse(function (o) {
-            if (o.isMesh && !kinds[n]) { o.material.envMapIntensity = 0.4; o.material.color.setHex(0xa8a196); kinds[n] = { geo: o.geometry, mat: o.material }; }
+          gltf.scene.updateMatrixWorld(true);
+          gltf.scene.traverse(function (o) {  /* keep the node transform: vertex quantization stores its scale there */
+            if (o.isMesh && !kinds[n]) { o.material.envMapIntensity = 0.4; o.material.color.setHex(0xa8a196); kinds[n] = { geo: o.geometry, mat: o.material, mtx: o.matrixWorld.clone() }; }
           });
           if (--left === 0) place();
         }, undefined, function () { if (--left === 0) place(); });
@@ -550,7 +551,7 @@ window.THREE = THREE;
           for (var r = 0; r < count; r++) {
             var kd = kinds[Math.floor(Math.random() * kinds.length)];
             var sc = (r === 0 ? 0.8 + Math.random() * 0.9 : 0.3 + Math.random() * 0.45) * (near ? 0.7 : 1.2) * (kd === kinds[1] ? 1.8 : 1);
-            var m = new T.Mesh(kd.geo, kd.mat);
+            var m = new T.Group(), body = new T.Mesh(kd.geo, kd.mat); body.applyMatrix4(kd.mtx); m.add(body);
             m.scale.set(sc, sc * (0.8 + Math.random() * 0.4), sc);
             m.rotation.y = Math.random() * Math.PI * 2;
             m.position.set(cx + (r ? (Math.random() - 0.5) * 6 : 0), 0, cz + (r ? (Math.random() - 0.5) * 6 : 0));
@@ -658,7 +659,7 @@ window.THREE = THREE;
     function bikeTex(f) {
       if (!f) return null;
       if (texCache[f]) return texCache[f];
-      var t = new T.TextureLoader(bikeMgr).load('bike/tx/' + f);
+      var t = new T.TextureLoader(bikeMgr).load('bike/tx/' + f.replace(/\.(png|jpe?g)$/i, '.webp'));  /* served as WebP */
       t.encoding = T.sRGBEncoding; t.flipY = false; t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 4;
       return (texCache[f] = t);
     }
@@ -699,7 +700,8 @@ window.THREE = THREE;
       uv.needsUpdate = true;
     }
     function buildBike(meta, buf) {
-      var mats = meta.materials.map(bikeMat);
+      var mats = [];  /* only materials some part uses (one in the file has no part and no texture) */
+      function matFor(i) { return mats[i] || (mats[i] = bikeMat(meta.materials[i])); }
       /* bike.bin is meshopt-compressed (herramientas/comprimir_moto.mjs): positions u16×4 (4th unused), normals i8×4,
          UVs u16×2, indices u16. Each block is decoded into a plain typed array, then dequantised as before. */
       function dec(off, len, count, size, isIndex) {
@@ -721,7 +723,7 @@ window.THREE = THREE;
         geo.setAttribute('normal', new T.BufferAttribute(nor, 3));
         geo.setAttribute('uv', new T.BufferAttribute(uv, 2));
         geo.setIndex(new T.BufferAttribute(new Uint16Array(dec(p.io, p.il, p.ic, 2, true)), 1));
-        var mesh = new T.Mesh(geo, mats[p.m]);
+        var mesh = new T.Mesh(geo, matFor(p.m));
         if (mesh.material.transparent) mesh.renderOrder = 2;
         if (p.n === MIRROR_PRIM) { mirrorUVs(geo); mesh.material = mirrorMat; mirrorMesh = mesh; }
         if (!mesh.material.transparent) shadowsOn(mesh);
