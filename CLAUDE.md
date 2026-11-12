@@ -44,7 +44,6 @@ npm run build    # genera dist/
 
 ## Curvas (no romper)
 - La escena se construye recta y se curva en el sombreado de vértices (ver «curves» en `main.js`): cada punto se desplaza de lado según `X(s+d) − X(s) − X'(s)·d` y el mundo se inclina con la moto en las curvas. `bendScene()` aplica la curva cada fotograma a todo lo que no es la moto, incluidas las sombras.
-- Iván quiere el fondo quieto: el panorama no se curva ni se inclina, no hay inclinación en curvas ni balanceo de cámara en reposo, y la curva se atenúa a partir de 100 m (15 % a 250 m) para que lomas y pinos lejanos apenas se muevan de lado.
 - Toda malla larga necesita vértices a lo largo (cada pocos metros) para poder curvarse: una malla de solo dos triángulos se queda recta.
 - Lo que no deba curvarse ni inclinarse lleva `userData.noBend` (el panorama: cielo y montañas del fondo quedan casi fijos, a petición de Iván). Lo que solo deba inclinarse, `userData.bendAmt = 0`.
 
