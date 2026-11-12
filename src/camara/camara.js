@@ -1,4 +1,4 @@
-/* Camera: the views (the rider's eyes, close-ups of the controls, the bike from outside), how each is framed in the
+/* Camera: the views (the rider's eyes, close to the TFT, the bike from outside), how each is framed in the
    part of the screen the page leaves free. The shared `view` state is also driven by controles.js. */
 import * as T from 'three';
 import { reduce, clamp } from '../config.js';

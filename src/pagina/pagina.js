@@ -12,7 +12,7 @@ export function createPage() {
   function fitTop() { app.style.setProperty('--top-h', Math.ceil(topEl.getBoundingClientRect().bottom + 12) + 'px'); }
   if (window.ResizeObserver) new ResizeObserver(fitTop).observe(topEl); else window.addEventListener('resize', fitTop);
   fitTop();
-  var state = { section: 'home', mode: 'todo', boot: false };
+  var state = { section: 'home', mode: 'todo' };
   var gl = null, extOn = false;
 
   function setMode(m) {
@@ -23,7 +23,6 @@ export function createPage() {
       var ms = c.dataset.modes;
       c.hidden = !(m === 'todo' || !ms || ms.split(' ').indexOf(m) > -1);
     });
-    if (gl) gl.setModeVisual(m);
   }
 
   extBtn.addEventListener('click', function () { toggleExt(); });
@@ -36,11 +35,18 @@ export function createPage() {
     extBtn.setAttribute('aria-current', extOn ? 'true' : 'false');
   }
 
+  /* where focus was before a page opened, to give it back when the page closes */
+  var opener = null;
   function setSection(id, opts) {
     opts = opts || {};
     if (!LABELS[id]) id = 'home';
+    var was = state.section;
     state.section = id;
     var open = id !== 'home';
+    if (open && was === 'home') {
+      var a = document.activeElement;
+      opener = a && a !== document.body && !panel.contains(a) ? a : null;
+    }
     panel.querySelectorAll('.sec').forEach(function (s) { s.hidden = s.dataset.sec !== id; });
     panel.classList.toggle('open', open);
     panel.toggleAttribute('inert', !open);
@@ -60,6 +66,13 @@ export function createPage() {
       }
     }
     if (gl) { gl.setView(id); gl.setReading(open); }
+    /* closing: focus goes back to whatever opened the page, or (opened from the TFT) to that section's menu button */
+    var fromNav = document.activeElement && document.activeElement.closest && document.activeElement.closest('#nav');  /* closed with «Inicio»: focus stays there */
+    if (!open && was !== 'home' && opts.focus !== false && !fromNav) {
+      var back = opener && document.contains(opener) ? opener : document.querySelector('#nav .navbtn[data-go="' + was + '"]');
+      if (back) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+      opener = null;
+    }
   }
 
   document.addEventListener('click', function (e) {

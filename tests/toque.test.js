@@ -25,3 +25,12 @@ test('close up, tapping the screen between rows does nothing, tapping off the sc
 test('with the bike seen from outside, taps never reach the screen', () => {
   assert.equal(tftTap('ext', true, 'about'), null);
 });
+
+test('only the main mouse button (or any touch or pen) counts as a tap', async () => {
+  const { countsAsTap } = await import('../src/camara/toque.js');
+  assert.equal(countsAsTap('mouse', 0), true);
+  assert.equal(countsAsTap('mouse', 1), false);  /* middle */
+  assert.equal(countsAsTap('mouse', 2), false);  /* right */
+  assert.equal(countsAsTap('touch', 0), true);
+  assert.equal(countsAsTap('pen', 0), true);
+});

@@ -10,3 +10,6 @@ export function tftTap(view, onScreen, row) {
   }
   return null;
 }
+
+/* right- and middle-clicks are not taps (they open the browser's menu or scroll); touch and pen always are */
+export function countsAsTap(pointerType, button) { return pointerType !== 'mouse' || button === 0; }

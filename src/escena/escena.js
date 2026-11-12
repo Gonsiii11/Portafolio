@@ -1,6 +1,6 @@
 /* ---------- 3D scene: first-person view from the saddle ----------
    Builds the renderer and every part of the scene, then runs the frame loop. Returns the small API the page uses
-   (setExt, setView, setModeVisual), or null when WebGL is not available. */
+   (setExt, setView, setReading), or null when WebGL is not available. */
 import * as T from 'three';
 import { reduce } from '../config.js';
 import { createLoader } from './carga.js';
@@ -56,7 +56,7 @@ export function createScene(page) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
 
     /* the road and the scenery slide toward the rider */
-    var spT = reduce ? 0 : (page.state.boot ? 40 : (view.ext ? 0 : view.speedT));
+    var spT = reduce ? 0 : (view.ext ? 0 : view.speedT);
     speed += (spT - speed) * (1 - Math.exp(-dt * 2));
     var step = speed * dt;
     if (step > 0) {
@@ -73,9 +73,10 @@ export function createScene(page) {
 
     /* behind a section page the scene is blurred: ten pictures a second are plenty (the world keeps moving) */
     if (reading && now - lastDraw < 100) { requestAnimationFrame(frame); return; }
+    var drawDt = Math.min(0.5, (now - lastDraw) / 1000);  /* time since the last picture (longer behind a page) */
     lastDraw = now;
     if (!reduce) terrain.setTime(now / 1000);
-    curves.updateLean(speed, dt);
+    curves.updateLean(speed, drawDt);
     curves.bendScene(bike.rig);
     lights.update(camera);
     renderer.shadowMap.needsUpdate = true;
@@ -95,7 +96,6 @@ export function createScene(page) {
   return {
     setExt: function (on) { cam.setExt(on); },
     setView: function (id) { cam.setView(id); },
-    setReading: function (on) { reading = !!on; },
-    setModeVisual: function () {}  /* the TFT no longer shows the project filter */
+    setReading: function (on) { reading = !!on; }
   };
 }

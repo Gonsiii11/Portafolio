@@ -5,7 +5,7 @@ import * as T from 'three';
 import { clamp } from '../config.js';
 import { tftHit } from '../moto/tft.js';
 import { takesViewKeys } from './teclas.js';
-import { tftTap } from './toque.js';
+import { tftTap, countsAsTap } from './toque.js';
 
 export function createControls(canvas, cam, bike, page) {
   var camera = cam.camera, view = cam.view;
@@ -35,6 +35,7 @@ export function createControls(canvas, cam, bike, page) {
   function goBack() { cam.back(); setHover(NONE); if (hint) hint.textContent = HINT_HOME; }
 
   canvas.addEventListener('pointerdown', function (e) {
+    if (!countsAsTap(e.pointerType, e.button)) return;  /* right/middle click: not a look-around, not a tap */
     view.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
     try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     canvas.style.cursor = 'grabbing';
