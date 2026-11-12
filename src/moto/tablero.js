@@ -83,7 +83,6 @@ function bars(ctx, st) {
 
 export function drawDash(ctx, st) {
   ctx.fillStyle = BG; ctx.fillRect(0, 0, TFT_W, TFT_H);
-  ctx.strokeStyle = LINE; ctx.lineWidth = 2; ctx.strokeRect(10, 10, TFT_W - 20, TFT_H - 20);
   bars(ctx, st);
   gauge(ctx, st);
   menu(ctx, st.hover);

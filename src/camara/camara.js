@@ -10,7 +10,7 @@ import { W3 } from '../moto/moto.js';
 var VIEWS = {
   home: { fp: true, eye: W3([0, 0.92, 0.22]), tgt: W3([0, 0.52, -0.8]), eyeP: W3([0, 1.05, 0.5]), tgtP: W3([0, 0.45, -0.7]) },
   /* step 1 of the TFT menu: the camera comes close and faces the screen (centre and normal measured from the model) */
-  tft: { t: W3([0.0095, 0.419, -0.548]), w: 0.19, h: 0.1, d: [0.005, 0.568, 0.823] },
+  tft: { t: W3([0.001, 0.415, -0.553]), w: 0.2, h: 0.12, d: [0, 0.563, 0.826] },  /* the dash glass, framed whole */
   ext: { t: W3([0, 0.32, 0.01]), w: 2.5, h: 1.3, d: [0.55, 0.3, 0.8] }
 };
 

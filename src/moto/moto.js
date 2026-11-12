@@ -83,9 +83,10 @@ export function createBike(scene, loader) {
       geo.setAttribute('normal', new T.BufferAttribute(nor, 3));
       geo.setAttribute('uv', new T.BufferAttribute(uv, 2));
       geo.setIndex(new T.BufferAttribute(new Uint16Array(dec(p.io, p.il, p.ic, 2, true)), 1));
-      var mesh = new T.Mesh(geo, matFor(p.m));
+      var mesh = new T.Mesh(geo, matFor(p.m)); mesh.name = p.n;  /* the model's part name (Object_43 = the dash screen) */
       if (mesh.material.transparent) mesh.renderOrder = 2;
       if (p.n === MIRROR_PRIM) { mirrorUVs(geo); mesh.material = mirrorMat; mirrorMesh = mesh; }
+      if (p.n === 'Object_43') fitScreenBacking(geo);  /* the dash glass */
       if (!mesh.material.transparent) shadowsOn(mesh);
       bike.add(mesh);
     });
@@ -102,14 +103,37 @@ export function createBike(scene, loader) {
   }
   loadBike();
 
-  /* TFT screen: my own canvas laid over the model's dash (centre, axes and size measured from the model) */
+  /* TFT screen: my own canvas laid on the model's dash glass (part Object_43). Axes measured from that part's vertices:
+     SCR_X across, SCR_Y up the glass, SCR_N out of it; SCR_C = the glass's centroid. The glass is ~18 × 11 cm with
+     rounded corners, so the 2:1 canvas (15.2 × 7.6 cm) sits centred in it and a dark backing cut to the
+     glass's own outline (built when the model arrives, fitScreenBacking) fills the rest so the whole screen looks lit.
+     Both sit 2.2–2.5 mm proud: the model has a tinted cover glass (Object_95, 28 % opacity) 1.4 mm above the screen,
+     and anything under it looks washed out. */
+  var SCR_X = new T.Vector3(0.99949, -0.0265, 0.01806), SCR_Y = new T.Vector3(0.03207, 0.82578, -0.56308), SCR_N = new T.Vector3(0.00001, 0.56337, 0.8262);
+  var SCR_C = new T.Vector3(0.00527, 0.41636, -0.55274), SCR_MID = [-0.0042, -0.0014];  /* centre of the glass's outline, in (x, y) from SCR_C */
+  function onGlass(u, v, lift) { return SCR_C.clone().addScaledVector(SCR_X, u).addScaledVector(SCR_Y, v).addScaledVector(SCR_N, lift); }
   var dashCanvas = document.createElement('canvas'); dashCanvas.width = 1024; dashCanvas.height = 512;
   var dctx = dashCanvas.getContext('2d');
   var dashTex = new T.CanvasTexture(dashCanvas); dashTex.encoding = T.sRGBEncoding; dashTex.anisotropy = 4;
-  var screen = new T.Mesh(new T.PlaneGeometry(0.15, 0.075), new T.MeshBasicMaterial({ map: dashTex, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
+  var screen = new T.Mesh(new T.PlaneGeometry(0.152, 0.076), new T.MeshBasicMaterial({ map: dashTex, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
   screen.renderOrder = 3;
-  screen.matrix.makeBasis(new T.Vector3(0.99900, -0.02700, 0.01800), new T.Vector3(0.03246, 0.82588, -0.56292), new T.Vector3(0.00000, 0.56321, 0.82631)).setPosition(0.00950, 0.41910, -0.54849);
+  screen.matrix.makeBasis(SCR_X, SCR_Y, SCR_N).setPosition(onGlass(SCR_MID[0], SCR_MID[1], 0.0025));
   screen.matrixAutoUpdate = false; bike.add(screen);
+  /* the glass's outline as a flat shape, in the screen's colour, just above the glass */
+  function fitScreenBacking(geo) {
+    var p = geo.attributes.position, pts = [], k, d = new T.Vector3();
+    for (k = 0; k < p.count; k++) {
+      d.set(p.getX(k), p.getY(k), p.getZ(k)).sub(SCR_C);
+      pts.push([d.dot(SCR_X) - SCR_MID[0], d.dot(SCR_Y) - SCR_MID[1]]);
+    }
+    pts.sort(function (a, b) { return Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]); });  /* walk round the centre */
+    var sh = new T.Shape();
+    pts.forEach(function (q, i) { if (i) sh.lineTo(q[0], q[1]); else sh.moveTo(q[0], q[1]); });
+    var back = new T.Mesh(new T.ShapeGeometry(sh), new T.MeshBasicMaterial({ color: new T.Color(0x060A0E).convertSRGBToLinear(), toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })  /* same black as the canvas (hex colours are linear in r128) */);
+    back.renderOrder = 3;
+    back.matrix.makeBasis(SCR_X, SCR_Y, SCR_N).setPosition(onGlass(SCR_MID[0], SCR_MID[1], 0.0022));
+    back.matrixAutoUpdate = false; bike.add(back);
+  }
   /* what the screen shows; `dirty` forces a redraw (hover change, fonts loaded), otherwise at most 15 redraws a second */
   var dash = { rpm: 1200, hover: null, dirty: true, since: 1, shown: '' };
 
