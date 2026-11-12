@@ -4,5 +4,5 @@ Textura del terreno:
 * autor:	Rob Tuytel (Poly Haven)
 * licencia:	CC0 1.0 (dominio público, no exige crédito) — https://creativecommons.org/publicdomain/zero/1.0/
 
-Cambios para esta web: solo el mapa de color (diffuse) a 1024 px, guardado como `hierba.jpg`.
+Cambios para esta web: mapa de color (`hierba.jpg`) y mapa de normales OpenGL (`hierba_normal.jpg`) a 2048 px.
 Una baldosa equivale a 15 × 15 m.

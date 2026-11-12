@@ -264,6 +264,18 @@ window.THREE = THREE;
       tex.repeat.set(1, ROAD_LEN / PERIOD);
       tex.offset.y = roadTex.offset.y;
       road.material.map = tex; road.material.needsUpdate = true;
+      /* fine relief: «Clean Asphalt» normal map (Poly Haven, CC0), sampled at its real size (~2.1 m a tile)
+         on top of the UVs the colour map scrolls with: 7 m / 2.1 = 3.33 across, 28 m / 2.1 = 13.3 along one tile */
+      new T.TextureLoader().load('carretera/asfalto_normal.jpg', function (nt) {
+        nt.wrapS = nt.wrapT = T.RepeatWrapping;
+        nt.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+        road.material.normalMap = nt; road.material.normalScale.set(0.9, 0.9);
+        road.material.onBeforeCompile = function (sh) {
+          sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>',
+            T.ShaderChunk.normal_fragment_maps.replace(/texture2D\( normalMap, vUv \)/g, 'texture2D( normalMap, vUv * vec2( 3.33, 13.3 ) )'));
+        };
+        road.material.needsUpdate = true;
+      });
       roadTex.dispose(); roadTex = tex;
     });
     /* terrain: a flat shoulder beside the road, then banks and rolling ground rising to both sides.
@@ -299,6 +311,22 @@ window.THREE = THREE;
       tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
       ground.material.map = tex; ground.material.needsUpdate = true;
     });
+    /* relief: the texture's own normal map (Poly Haven, CC0) */
+    new T.TextureLoader().load('terreno/hierba_normal.jpg', function (tex) {
+      tex.wrapS = tex.wrapT = T.RepeatWrapping;
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      ground.material.normalMap = tex; ground.material.normalScale.set(1.2, 1.2); ground.material.needsUpdate = true;
+    });
+    /* anti-tiling: the colour is mixed with itself at ~6x the scale and an offset, so the 15 m repeat stops showing */
+    ground.material.onBeforeCompile = function (sh) {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', [
+        '#ifdef USE_MAP',
+        '  vec4 texelColor = mix( texture2D( map, vUv ), texture2D( map, vUv * 0.163 + vec2( 0.31, 0.57 ) ), 0.45 );',
+        '  texelColor = mapTexelToLinear( texelColor );',
+        '  diffuseColor *= texelColor;',
+        '#endif'
+      ].join('\n'));
+    };
     function groundY(x, zWorld) { return GROUND + terH(x, zWorld - ground.position.z); }
 
     /* mountain-road furniture that slides past: guardrail («bionda») on some stretches, delineator posts («hitos de arista») elsewhere.
