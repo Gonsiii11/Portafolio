@@ -11,7 +11,7 @@ Web personal en 3D para buscar prácticas. El visitante ve una moto en primera p
 ## Stack
 - Vite + JavaScript sin framework + Three.js **0.128.0 (fijada a propósito)**. El código usa APIs de esa versión (`outputEncoding`, `sRGBEncoding`). No subir de versión sin migrar el renderizado.
 - `index.html`: estructura y textos. `src/style.css`: estilos. `src/main.js`: lógica de la página y la escena 3D (función `initGL`).
-- `public/bike/`: moto convertida a un formato ligero propio (`bike.json` describe materiales y piezas, `bike.bin` la geometría cuantizada, `tx/` las texturas).
+- `public/bike/`: moto convertida a un formato ligero propio (`bike.json` describe materiales y piezas, `bike.bin` la geometría cuantizada y comprimida con meshoptimizer, `tx/` las texturas). `bike.bin` se genera con `node herramientas/comprimir_moto.mjs` desde `modelos-fuente/moto/bike_raw.*` (sin comprimir), y el script verifica la descompresión con el decodificador de three r128.
 
 ## Cómo arrancar
 ```

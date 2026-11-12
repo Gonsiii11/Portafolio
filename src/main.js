@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import './style.css';
 
 // El código de la escena usa THREE como global (three@0.128.0, fijado en package.json).
@@ -699,11 +700,19 @@ window.THREE = THREE;
     }
     function buildBike(meta, buf) {
       var mats = meta.materials.map(bikeMat);
+      /* bike.bin is meshopt-compressed (herramientas/comprimir_moto.mjs): positions u16×4 (4th unused), normals i8×4,
+         UVs u16×2, indices u16. Each block is decoded into a plain typed array, then dequantised as before. */
+      function dec(off, len, count, size, isIndex) {
+        var out = new Uint8Array(count * size), src = new Uint8Array(buf, off, len);
+        if (isIndex) MeshoptDecoder.decodeIndexBuffer(out, count, size, src); else MeshoptDecoder.decodeVertexBuffer(out, count, size, src);
+        return out.buffer;
+      }
       meta.prims.forEach(function (p) {
-        var n = p.cnt, q = new Uint16Array(buf, p.po, n * 3), nr = new Int8Array(buf, p.no, n * 4), uq = new Uint16Array(buf, p.uo, n * 2);
+        var n = p.cnt;
+        var q = new Uint16Array(dec(p.po, p.pl, n, 8)), nr = new Int8Array(dec(p.no, p.nl, n, 4)), uq = new Uint16Array(dec(p.uo, p.ul, n, 4));
         var pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2), k;
         for (k = 0; k < n; k++) {
-          pos[k * 3] = p.mn[0] + q[k * 3] / 65535 * p.rg[0]; pos[k * 3 + 1] = p.mn[1] + q[k * 3 + 1] / 65535 * p.rg[1]; pos[k * 3 + 2] = p.mn[2] + q[k * 3 + 2] / 65535 * p.rg[2];
+          pos[k * 3] = p.mn[0] + q[k * 4] / 65535 * p.rg[0]; pos[k * 3 + 1] = p.mn[1] + q[k * 4 + 1] / 65535 * p.rg[1]; pos[k * 3 + 2] = p.mn[2] + q[k * 4 + 2] / 65535 * p.rg[2];
           nor[k * 3] = nr[k * 4] / 127; nor[k * 3 + 1] = nr[k * 4 + 1] / 127; nor[k * 3 + 2] = nr[k * 4 + 2] / 127;
           uv[k * 2] = p.umn[0] + uq[k * 2] / 65535 * p.urg[0]; uv[k * 2 + 1] = p.umn[1] + uq[k * 2 + 1] / 65535 * p.urg[1];
         }
@@ -711,7 +720,7 @@ window.THREE = THREE;
         geo.setAttribute('position', new T.BufferAttribute(pos, 3));
         geo.setAttribute('normal', new T.BufferAttribute(nor, 3));
         geo.setAttribute('uv', new T.BufferAttribute(uv, 2));
-        geo.setIndex(new T.BufferAttribute(new Uint16Array(buf, p.io, p.ic), 1));
+        geo.setIndex(new T.BufferAttribute(new Uint16Array(dec(p.io, p.il, p.ic, 2, true)), 1));
         var mesh = new T.Mesh(geo, mats[p.m]);
         if (mesh.material.transparent) mesh.renderOrder = 2;
         if (p.n === MIRROR_PRIM) { mirrorUVs(geo); mesh.material = mirrorMat; mirrorMesh = mesh; }
@@ -723,8 +732,9 @@ window.THREE = THREE;
     function loadBike() {
       var meta;
       fetch('bike/bike.json').then(function (r) { return r.json(); }).then(function (j) {
-        meta = j; return fetch('bike/bike.bin');
-      }).then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+        meta = j; return Promise.all([fetch('bike/bike.bin').then(function (r) { return r.arrayBuffer(); }), MeshoptDecoder.ready]);
+      }).then(function (res) {
+        var buf = res[0];
         buildBike(meta, buf); bikeReady = true;
         var ld = document.getElementById('loading'); if (ld) ld.hidden = true;
       }).catch(function () { bikeShown(); var ld = document.getElementById('loading'); if (ld) ld.textContent = 'No se pudo cargar el modelo de la moto.'; });
