@@ -207,9 +207,9 @@ window.THREE = THREE;
        pushed sideways by  X(s + d) - X(s) - X'(s)·d,  where s = metres travelled and d = metres ahead (-z): zero offset and
        zero slope at the bike, so the bike stays in its lane, while the road ahead swings left and right and the terrain,
        forest, grass, rocks and roadside furniture swing with it (they all use the same function). X is a sum of sines that
-       repeats every CURVE_P metres. Through a bend the world also rolls around the bike's contact patch by the lean angle,
-       atan(v²·X''/g), as when a rider leans. The bike itself, the sky and the camera are not bent. */
-    var CURVE_P = 1500, CURVE = [[55, 2, 0], [11, 5, 1.3], [1.8, 11, 4.1]];  /* amplitude (m), cycles per CURVE_P, phase */
+       repeats every CURVE_P metres. Through a bend the ground also rolls very slightly (under 1°) around the bike's contact
+       patch, a hint of lean. The bike itself, the sky panorama and the camera are neither bent nor rolled. */
+    var CURVE_P = 1500, CURVE = [[30, 2, 0], [7, 5, 1.3], [1.2, 11, 4.1]];  /* tightest bend ~133 m radius */  /* amplitude (m), cycles per CURVE_P, phase */
     CURVE.forEach(function (c) { c.push(Math.PI * 2 * c[1] / CURVE_P); });   /* c[3] = angular frequency */
     var curveU = { value: 0 }, leanU = { value: 0 }, travelled = 0;
     function curveD2(s) { var v = 0; CURVE.forEach(function (c) { v -= c[0] * c[3] * c[3] * Math.sin(c[3] * s + c[2]); }); return v; }
@@ -321,7 +321,7 @@ window.THREE = THREE;
          the image is already tone-mapped, and mapping it twice washed out the mountains.
          scale.x = -1 and the half turn make the sphere's UVs match three.js equirect (u = 0.25 straight ahead) */
       pano = new T.Mesh(new T.SphereGeometry(650, 64, 32), new T.MeshBasicMaterial({ map: tex, side: T.BackSide, fog: false, depthWrite: false, toneMapped: false }));
-      pano.scale.x = -1; pano.rotation.y = Math.PI; pano.renderOrder = -2; pano.userData.bendAmt = 0; scene.add(pano);  /* leans, doesn't bend */
+      pano.scale.x = -1; pano.rotation.y = Math.PI; pano.renderOrder = -2; pano.userData.noBend = true; scene.add(pano);  /* the sky and far mountains stay put: no bend, no lean */
       scene.remove(sky); scene.remove(mtn); scene.remove(sun);  /* the photo has its own sun */
       scene.fog.color.setHex(HAZE_DAY); scene.fog.near = 60; scene.fog.far = 600;
       ground.material.color.setHex(0xc9c4b4); ground.material.envMapIntensity = 0.3;
@@ -1137,7 +1137,7 @@ window.THREE = THREE;
       }
 
       /* camera */
-      var swayYaw = (!reduce && cur === 'home' && now - lastInteract > 2500) ? Math.sin(now * 0.0004) * 0.02 : 0;
+      var swayYaw = (!reduce && cur === 'home' && now - lastInteract > 2500) ? Math.sin(now * 0.0004) * 0.005 : 0;  /* idle sway, kept tiny so the background stays calm */
       yaw += (yawT + swayYaw - yaw) * k2; pitch += (pitchT - pitch) * k2;
       if (ext && !reduce && now - lastInteract > 2500 && !drag) spinT += dt * 0.35;
       rig.rotation.y += ((ext ? spinT : 0) - rig.rotation.y) * (reduce ? 1 : 1 - Math.exp(-dt * 7));
@@ -1192,7 +1192,7 @@ window.THREE = THREE;
       if (!reduce) grassTime.value = now / 1000;
       /* a hint of lean into the bend: a third of the physical angle atan(v²·curvature / g), capped at ~4°, eased slowly,
          so the horizon tilts a little instead of swinging the whole background around */
-      var LEAN_SHARE = 0.33, LEAN_MAX = 0.07;
+      var LEAN_SHARE = 0.33, LEAN_MAX = 0.015;  /* under 1°: the sky stays still, so the ground barely tilts */
       var leanT = Math.max(-LEAN_MAX, Math.min(LEAN_MAX, LEAN_SHARE * Math.atan(speed * speed * curveD2(curveU.value) / 9.81)));
       leanU.value += (leanT - leanU.value) * (1 - Math.exp(-dt * 1.5));
       bendScene();
