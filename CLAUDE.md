@@ -25,7 +25,7 @@ npm run build    # genera dist/
 2. **Nada de la M 1000 R de Iván** (ni modelo ni fotos) por ahora; ese contenido se tratará aparte.
 3. Cualquier modelo 3D nuevo (por ejemplo una carretera) debe tener licencia que permita su uso y llevar su crédito.
    - Carretera: textura de «Street road» de saifurrehman (https://sketchfab.com/3d-models/street-road-a01b47f299b24ac99a1dcd8e2111364b), CC BY 4.0. Solo se usa la textura del asfalto (`public/carretera/asfalto.jpg`); crédito en `#credit`, `#pcredit` y `#credits`, licencia en `public/carretera/LICENSE-modelo.txt`.
-   - Fondo: panorama «Rolling Hills» de Poly Haven (CC0, no exige crédito), convertido con `herramientas/hdr2jpg.py` a `public/fondo/rolling_hills.jpg`.
+   - Fondo: panorama «Rolling Hills» de Poly Haven (CC0, no exige crédito), convertido desde el HDR de 4k con `herramientas/hdr2jpg.py` a `public/fondo/rolling_hills.jpg` (4096 px, girado y con el horizonte estirado; el comando exacto está en `main.js`).
    - Pinos: «Scots Pine Trees Set» de Maksim Batyrev (https://sketchfab.com/3d-models/scots-pine-trees-set-422b961ff3d14e7baa7e9077572b2247), CC BY 4.0. En `public/pinos/` con texturas reducidas y follaje engrosado (`herramientas/reducir_pinos.py`); crédito en `#credit`, `#pcredit` y `#credits`.
    - Terreno: textura «Aerial Grass Rock» de Poly Haven (CC0, no exige crédito) en `public/terreno/hierba.jpg`; nota en `public/terreno/LICENSE.txt`.
    - Rocas: «Namaqualand Boulder 04» y «05» de Poly Haven (CC0, no exige crédito), simplificadas con `herramientas/reducir_rocas.sh` a `public/rocas/granito_a.glb` y `granito_b.glb`; nota en `public/rocas/LICENSE.txt`.

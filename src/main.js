@@ -199,11 +199,12 @@ window.THREE = THREE;
 
     /* real panorama (Poly Haven «Rolling Hills», CC0), pre-rotated so the mountain range lies ahead and the sun sits
        behind on the left (u = 0.85), lighting the landscape from the side; the band above the horizon is stretched ×2.4 so the mountains stand taller
-       (herramientas/hdr2jpg.py rolling_hills_2k.hdr rolling_hills.jpg 1.0 2048 0.85 2.4 35).
+       (herramientas/hdr2jpg.py rolling_hills_4k.hdr rolling_hills.jpg 1.0 4096 0.85 2.4 35).
        Until it loads (or if it fails) the painted sky above stays in place. */
     new T.TextureLoader().load('fondo/rolling_hills.jpg', function (tex) {
       tex.encoding = T.sRGBEncoding;
       tex.mapping = T.EquirectangularReflectionMapping;
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
       /* drawn on a sphere instead of scene.background so it skips the renderer's ACES tone mapping:
          the JPG is already tone-mapped, and mapping it twice washed out the mountains.
          scale.x = -1 and the half turn make the sphere's UVs match three.js equirect (u = 0.25 straight ahead) */
