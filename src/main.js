@@ -209,7 +209,7 @@ window.THREE = THREE;
        forest, grass, rocks and roadside furniture swing with it (they all use the same function). X is a sum of sines that
        repeats every CURVE_P metres. Through a bend the ground also rolls very slightly (under 1°) around the bike's contact
        patch, a hint of lean. The bike itself, the sky panorama and the camera are neither bent nor rolled. */
-    var CURVE_P = 1500, CURVE = [[10, 2, 0], [2.3, 5, 1.3], [0.4, 11, 4.1]];  /* open bends: tightest ~400 m radius, so far hills barely slide */  /* amplitude (m), cycles per CURVE_P, phase */
+    var CURVE_P = 1500, CURVE = [[30, 2, 0], [7, 5, 1.3], [1.2, 11, 4.1]];  /* tightest bend ~133 m radius */  /* amplitude (m), cycles per CURVE_P, phase */
     CURVE.forEach(function (c) { c.push(Math.PI * 2 * c[1] / CURVE_P); });   /* c[3] = angular frequency */
     var curveU = { value: 0 }, leanU = { value: 0 }, travelled = 0;
     function curveD2(s) { var v = 0; CURVE.forEach(function (c) { v -= c[0] * c[3] * c[3] * Math.sin(c[3] * s + c[2]); }); return v; }
