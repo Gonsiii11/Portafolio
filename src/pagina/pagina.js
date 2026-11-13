@@ -23,6 +23,8 @@ export function createPage() {
       var ms = c.dataset.modes;
       c.hidden = !(m === 'todo' || !ms || ms.split(' ').indexOf(m) > -1);
     });
+    /* a group with nothing to show hides its title too */
+    panel.querySelectorAll('.pgroup').forEach(function (g) { g.hidden = !g.querySelector('.pcard:not([hidden])'); });
   }
 
   extBtn.addEventListener('click', function () { toggleExt(); });

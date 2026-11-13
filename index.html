@@ -39,73 +39,228 @@
   <aside id="panel" role="region" aria-label="Contenido de la sección" aria-hidden="true" tabindex="-1" inert>
     <button id="close" type="button" aria-label="Cerrar sección"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 3l12 12M15 3L3 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
     <div id="pbody">
-
       <section class="sec" data-sec="about" hidden>
-        <p class="eyebrow">Sobre mí</p>
-        <h2>Me gusta construir cosas que resuelven problemas</h2>
-        <p class="intro">Lo que más disfruto del software es pasar de un problema concreto a algo que funciona: entender qué hace falta, pensar la solución y construirla hasta que se puede usar.</p>
-        <p>Estoy en tercer curso de desarrollo de software y busco unas prácticas en Madrid, de 20 horas semanales. Me interesa cualquier equipo que construya buen software, sea del sector que sea.</p>
-        <dl class="spec">
-          <div><dt>Formación</dt><dd>Desarrollo de software, 3.º</dd></div>
-          <div><dt>Ubicación</dt><dd>Madrid</dd></div>
-          <div><dt>Disponibilidad</dt><dd>20 h/semana</dd></div>
-          <div><dt>Busco</dt><dd>Prácticas</dd></div>
-        </dl>
-        <p class="label">Tecnologías en mis proyectos</p>
-        <div class="tags"><span class="tag">PHP</span><span class="tag">Laravel</span><span class="tag">Python</span><span class="tag">C++</span><span class="tag ph">[+ las tuyas]</span></div>
+        <header class="phead">
+          <h2>Me gusta construir cosas que resuelven problemas</h2>
+          <div class="ticks" aria-hidden="true"></div>
+          <p class="intro">Lo que más disfruto del software es pasar de un problema concreto a algo que funciona: entender qué hace falta, pensar la solución y construirla hasta que se puede usar.</p>
+        </header>
+
+        <div class="cols">
+          <div class="prose">
+            <p>Estoy en tercer curso de desarrollo de software. He trabajado en backend y APIs, en la parte que se ve y en soluciones con IA. Entre lo que he construido están la página de un cliente real, un panel que reúne datos científicos en tiempo real de varias APIs públicas, escenas 3D y este mismo portfolio. Con IA, mi equipo ganó el reto de Acerinox en el hackathon IndesIAhack 2025 con una solución que cruza licitaciones de obra nueva con su catálogo para encontrar oportunidades de negocio.</p>
+            <p>También he programado fuera del navegador: un Blackjack de consola en C++ orientado a objetos y una instalación desatendida de Windows que deja el sistema limpio y listo para trabajar.</p>
+            <p>Busco unas prácticas en Madrid, de 20 horas semanales. Me interesa cualquier equipo que construya buen software, sea del sector que sea.</p>
+            <p><button class="plink" type="button" data-go="projects">Ver los proyectos</button></p>
+          </div>
+          <dl class="ficha" aria-label="Ficha">
+            <div><dt>Formación</dt><dd>Desarrollo de software, 3.º</dd></div>
+            <div><dt>Busco</dt><dd>Prácticas</dd></div>
+            <div><dt>Ubicación</dt><dd>Madrid</dd></div>
+            <div><dt>Disponibilidad</dt><dd>20 h/semana</dd></div>
+            <div><dt>GitHub</dt><dd><a href="https://github.com/Gonsiii11" target="_blank" rel="noopener">Gonsiii11</a></dd></div>
+          </dl>
+        </div>
+
+        <section class="block" aria-labelledby="kit-t">
+          <h3 id="kit-t">Con qué he trabajado</h3>
+          <dl class="kit">
+            <div><dt>Lenguajes</dt><dd class="tags"><span class="tag">JavaScript</span><span class="tag">C++</span><span class="tag">Python</span><span class="tag">PHP</span><span class="tag">HTML y CSS</span><span class="tag">GLSL</span></dd></div>
+            <div><dt>Backend</dt><dd class="tags"><span class="tag">Laravel</span><span class="tag">APIs</span></dd></div>
+            <div><dt>IA</dt><dd class="tags"><span class="tag">LLM</span><span class="tag">Bases de datos vectoriales</span><span class="tag">Procesamiento de datos</span></dd></div>
+            <div><dt>Frontend</dt><dd class="tags"><span class="tag">React</span><span class="tag">Three.js</span><span class="tag">Tailwind CSS</span><span class="tag">Vite</span></dd></div>
+            <div><dt>Herramientas</dt><dd class="tags"><span class="tag">Git y GitHub</span><span class="tag">GitHub Actions</span><span class="tag">Docker</span><span class="tag">Vercel</span></dd></div>
+          </dl>
+        </section>
+
+        <section class="block" aria-labelledby="how-t">
+          <h3 id="how-t">Lo que se ve en mis proyectos</h3>
+          <ul class="facts">
+            <li><b>Publicados</b>Las webs terminadas están en línea y se pueden probar, no solo leer.</li>
+            <li><b>Documentados</b>Cada repositorio público explica cómo arrancarlo, cómo está organizado y por qué.</li>
+            <li><b>Variados</b>De la web de un negocio a C++ de consola o sombreadores para 3D: me adapto a lo que pida el problema.</li>
+          </ul>
+        </section>
+
         <p class="note">Y fuera del código, me apasiona la automoción: los coches, las motos y la aviación. Por eso este portfolio es una moto.</p>
       </section>
 
       <section class="sec" data-sec="projects" hidden>
-        <p class="eyebrow">Proyectos</p>
-        <h2>Lo que estoy construyendo</h2>
+        <header class="phead">
+          <h2>Lo que he construido y lo que viene</h2>
+          <div class="ticks" aria-hidden="true"></div>
+          <p class="intro" data-mode-text="todo">De la web de un cliente real a un panel de datos en vivo, 3D en el navegador y C++ de consola. Cada proyecto lleva su estado real.</p>
+          <p class="intro" data-mode-text="auto" hidden>Lo que más me mueve: simulación y optimización aplicadas a la conducción.</p>
+          <p class="intro" data-mode-text="web" hidden>Aplicaciones web, 3D en el navegador, C++ y sistemas.</p>
+        </header>
         <div class="modes" role="group" aria-label="Filtrar proyectos por modo">
           <button class="chip" type="button" data-mode="todo" aria-pressed="true">Todo</button>
           <button class="chip" type="button" data-mode="auto" aria-pressed="false">Automoción</button>
           <button class="chip" type="button" data-mode="web" aria-pressed="false">Software general</button>
         </div>
-        <p data-mode-text="todo">Todos mis proyectos, de la simulación de conducción al desarrollo web.</p>
-        <p data-mode-text="auto" hidden>Lo que más me mueve: simulación y optimización aplicadas a la conducción.</p>
-        <p data-mode-text="web" hidden>Aplicaciones web y backend para clientes reales.</p>
 
-        <div class="pgrid">
-          <article class="pcard" data-modes="auto">
-            <svg class="circuit" viewBox="36 14 350 215" role="img" aria-label="Ilustración de un circuito con su trazada dibujándose">
-              <path class="track" d="M60 120 C60 60 140 30 220 52 C290 72 310 40 345 80 C375 118 330 175 262 165 C200 155 190 205 120 195 C75 188 60 160 60 120 Z" fill="none" stroke-width="22" stroke-linejoin="round"/>
-              <path class="line" pathLength="1000" d="M66 118 C68 72 140 46 218 60 C284 74 306 52 336 86 C362 116 324 152 262 148 C196 142 188 190 122 182 C80 176 66 156 66 118 Z" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <div class="pmeta"><p class="eyebrow">Automoción · Simulación</p><span class="state">Planificado</span></div>
-            <h3>Trazada óptima con algoritmos genéticos</h3>
-            <p>Reproducción del paper «Searching for the Optimal Racing Line Using Genetic Algorithms» (Cardamone et al., 2010) sobre el simulador TORCS.</p>
-            <div class="tags"><span class="tag">Python</span><span class="tag">C++</span><span class="tag">TORCS</span><span class="tag">Algoritmos genéticos</span></div>
-            <p class="src">[Enlace al repositorio cuando esté publicado]</p>
+        <section class="pgroup" aria-labelledby="pg-hechos">
+          <h3 id="pg-hechos">Hechos</h3>
+
+          <article class="pcard big" data-modes="web">
+            <div class="pmeta"><span class="year">2025</span><span class="state done">Reto ganado</span><span class="kind">IA, hackathon</span></div>
+            <div class="pmain">
+              <h4>IndesIAhack 2025: solución ganadora del reto de Acerinox</h4>
+              <p>Solución con IA que compara las licitaciones de nuevas construcciones con el catálogo de Acerinox para encontrar oportunidades de negocio. Hecha en equipo y en tiempo limitado, en la segunda edición del hackathon de IndesIA.</p>
+              <ul class="pts">
+                <li>Procesamiento de los datos de las licitaciones, base de datos vectorial para cruzarlas con el catálogo y un LLM.</li>
+                <li>Nuestro equipo, de seis personas, ganó el reto de Acerinox en un hackathon con más de 130 estudiantes.</li>
+                <li>Después presentamos la solución en las oficinas de Acerinox y la contrastamos con sus profesionales.</li>
+              </ul>
+            </div>
+            <div class="pside">
+              <div class="tags"><span class="tag">LLM</span><span class="tag">Bases de datos vectoriales</span><span class="tag">Procesamiento de datos</span><span class="tag">Hackathon</span></div>
+            </div>
+          </article>
+
+          <article class="pcard big" data-modes="web">
+            <div class="pmeta"><span class="year">2026</span><span class="state done">Publicado</span><span class="kind">Web, cliente real</span></div>
+            <div class="pmain">
+              <h4>GR Desatascos: web para una empresa de desatascos</h4>
+              <p>Web de una sola página para un cliente real, una empresa de desatascos y mantenimiento de Tenerife, pensada para que quien tiene una urgencia llame en segundos.</p>
+              <ul class="pts">
+                <li>Teléfono y WhatsApp siempre a mano, y los servicios ordenados por tipo de problema.</li>
+                <li>Sitio estático generado con Astro: carga rápida y sin servidor que mantener.</li>
+                <li>Título y descripción preparados para buscadores, y enlace para saltar al contenido.</li>
+              </ul>
+            </div>
+            <div class="pside">
+              <div class="tags"><span class="tag">Astro</span><span class="tag">HTML y CSS</span><span class="tag">GitHub Pages</span></div>
+              <p class="links"><a class="plink" href="https://gonsiii11.github.io/GRdesatascos/" target="_blank" rel="noopener">Ver web</a></p>
+            </div>
+          </article>
+
+          <article class="pcard big" data-modes="web">
+            <div class="pmeta"><span class="year">2026</span><span class="state done">Publicado</span><span class="kind">Web, datos en vivo</span></div>
+            <div class="pmain">
+              <h4>HeliosDeck: panel científico en tiempo real</h4>
+              <p>Reúne en un solo sitio datos de clima espacial, radiación solar, la posición de la ISS y la Luna, tomados de varias APIs públicas (NOAA, NASA POWER, Met.no y otras).</p>
+              <ul class="pts">
+                <li>Datos en vivo: el índice Kp se actualiza cada minuto y la ISS cada dos segundos, sobre un mapa.</li>
+                <li>Gráficos, filtros compartidos entre páginas y exportación de cada panel a JSON.</li>
+                <li>Inicio de sesión y rutas protegidas.</li>
+              </ul>
+            </div>
+            <div class="pside">
+              <div class="tags"><span class="tag">React</span><span class="tag">React Router</span><span class="tag">Tailwind CSS</span><span class="tag">Recharts</span><span class="tag">MapLibre GL</span><span class="tag">Vite</span></div>
+              <p class="links"><a class="plink" href="https://helios-deck-three.vercel.app" target="_blank" rel="noopener">Ver demo</a><a class="plink" href="https://github.com/Gonsiii11/HeliosDeck" target="_blank" rel="noopener">Código</a></p>
+            </div>
+          </article>
+
+          <article class="pcard big" data-modes="web">
+            <div class="pmeta"><span class="year">2026</span><span class="state wip">En curso</span><span class="kind">Web, 3D</span></div>
+            <div class="pmain">
+              <h4>Este portfolio: una moto en primera persona</h4>
+              <p>La web que estás viendo: una carretera de sierra en 3D vista desde el asiento, con la pantalla del cuadro como menú.</p>
+              <ul class="pts">
+                <li>La escena se construye recta y se curva en el sombreador de vértices.</li>
+                <li>Carga en tres fases para que la primera vista sea ligera, con la geometría de la moto comprimida.</li>
+                <li>Versión sin 3D, uso con teclado y respeto a «reducir movimiento».</li>
+              </ul>
+            </div>
+            <div class="pside">
+              <div class="tags"><span class="tag">Three.js</span><span class="tag">JavaScript</span><span class="tag">GLSL</span><span class="tag">Vite</span></div>
+              <p class="links"><a class="plink" href="https://github.com/Gonsiii11/Portafolio" target="_blank" rel="noopener">Código</a></p>
+            </div>
+          </article>
+
+          <article class="pcard big" data-modes="web">
+            <div class="pmeta"><span class="year">2026</span><span class="state done">Publicado</span><span class="kind">Web, 3D</span></div>
+            <div class="pmain">
+              <h4>Vinilo 3D de «Por Si Mañana No Estoy»</h4>
+              <p>La portada de un álbum convertida en un vinilo interactivo con su lista de canciones. Proyecto de fan: la portada pertenece a sus autores.</p>
+              <ul class="pts">
+                <li>Sombreadores GLSL propios: relieve a partir de un mapa de profundidad, latido y surcos.</li>
+                <li>El brazo baja a la banda de cada canción y suena un fragmento de 30 s; la portada late con los graves.</li>
+                <li>Los mapas de textura se generan con un script de Python.</li>
+              </ul>
+            </div>
+            <div class="pside">
+              <div class="tags"><span class="tag">Three.js</span><span class="tag">GLSL</span><span class="tag">JavaScript</span><span class="tag">Python</span></div>
+              <p class="links"><a class="plink" href="https://gonsiii11.github.io/psmne-vinilo/" target="_blank" rel="noopener">Ver demo</a><a class="plink" href="https://github.com/Gonsiii11/psmne-vinilo" target="_blank" rel="noopener">Código</a></p>
+            </div>
           </article>
 
           <article class="pcard" data-modes="web">
-            <div class="pmeta"><p class="eyebrow">Web · Backend · Cliente real</p><span class="state">En preparación</span></div>
-            <h3>Web y gestor de citas para una hípica</h3>
-            <p>Migración de la web del cliente (hoy en Framer con reservas en Cal.com) y gestor de citas propio con pago por adelantado y bonos de clases.</p>
-            <div class="tags"><span class="tag">PHP</span><span class="tag">Laravel</span><span class="tag">Reservas</span><span class="tag">Pagos</span></div>
-            <p class="src">[Enlace a la web cuando esté publicada]</p>
+            <div class="pmeta"><span class="year">2025</span><span class="state done">Terminado</span><span class="kind">Consola</span></div>
+            <div class="pmain">
+              <h4>Blackjack en C++</h4>
+              <p>Blackjack de consola para hasta cuatro jugadores, con jugadores controlados por el programa, apuestas y guardado de la partida. Orientado a objetos (carta, baraja, mano, jugador y juego) y con barajado Fisher-Yates.</p>
+            </div>
+            <div class="pside">
+              <div class="tags"><span class="tag">C++17</span><span class="tag">POO</span></div>
+              <p class="links"><a class="plink" href="https://github.com/Gonsiii11/Blackjack" target="_blank" rel="noopener">Código</a></p>
+            </div>
           </article>
 
-          <article class="pcard ph">
-            <p class="eyebrow">[Espacio libre]</p>
-            <h3>Aquí irá tu siguiente proyecto</h3>
-            <p>Cada proyecto se etiqueta como automoción o software general, y el filtro de arriba lo muestra donde toque.</p>
+          <article class="pcard" data-modes="web">
+            <div class="pmeta"><span class="year">2025</span><span class="state done">Publicado</span><span class="kind">Sistemas</span></div>
+            <div class="pmain">
+              <h4>WindowsLite</h4>
+              <p>Instalación desatendida de Windows que deja un sistema ligero: sin aplicaciones preinstaladas ni telemetría, con los servicios innecesarios desactivados y una fase final que instala el navegador y las utilidades.</p>
+            </div>
+            <div class="pside">
+              <div class="tags"><span class="tag">Windows</span><span class="tag">autounattend.xml</span></div>
+              <p class="links"><a class="plink" href="https://github.com/Gonsiii11/WindowsLite" target="_blank" rel="noopener">Código</a></p>
+            </div>
           </article>
-        </div>
+        </section>
+
+        <section class="pgroup" aria-labelledby="pg-taller">
+          <h3 id="pg-taller">En el taller</h3>
+
+          <article class="pcard" data-modes="auto">
+            <div class="pmeta"><span class="state plan">Planificado</span><span class="kind">Automoción, simulación</span></div>
+            <div class="pmain">
+              <h4>Trazada óptima con algoritmos genéticos</h4>
+              <p>Reproducción del paper «Searching for the Optimal Racing Line Using Genetic Algorithms» (Cardamone et al., 2010) sobre el simulador TORCS.</p>
+              <p class="src">[Enlace al repositorio cuando esté publicado]</p>
+            </div>
+            <div class="pside">
+              <svg class="circuit" viewBox="36 14 350 215" role="img" aria-label="Ilustración de un circuito con su trazada dibujándose">
+                <path class="track" d="M60 120 C60 60 140 30 220 52 C290 72 310 40 345 80 C375 118 330 175 262 165 C200 155 190 205 120 195 C75 188 60 160 60 120 Z" fill="none" stroke-width="22" stroke-linejoin="round"/>
+                <path class="line" pathLength="1000" d="M66 118 C68 72 140 46 218 60 C284 74 306 52 336 86 C362 116 324 152 262 148 C196 142 188 190 122 182 C80 176 66 156 66 118 Z" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div class="tags"><span class="tag">Python</span><span class="tag">C++</span><span class="tag">TORCS</span><span class="tag">Algoritmos genéticos</span></div>
+            </div>
+          </article>
+
+          <article class="pcard" data-modes="web">
+            <div class="pmeta"><span class="state plan">En preparación</span><span class="kind">Web, cliente real</span></div>
+            <div class="pmain">
+              <h4>Web y gestor de citas para una hípica</h4>
+              <p>Migración de la web del cliente (hoy en Framer con reservas en Cal.com) y gestor de citas propio con pago por adelantado y bonos de clases.</p>
+              <p class="src">[Enlace a la web cuando esté publicada]</p>
+            </div>
+            <div class="pside">
+              <div class="tags"><span class="tag">PHP</span><span class="tag">Laravel</span><span class="tag">Reservas</span><span class="tag">Pagos</span></div>
+            </div>
+          </article>
+        </section>
       </section>
 
       <section class="sec" data-sec="contact" hidden>
-        <p class="eyebrow">Contacto</p>
-        <h2>Motor en marcha. ¿Hablamos?</h2>
-        <p>Busco unas prácticas de 20 horas semanales en Madrid. Si tu equipo hace software, sea de automoción o no, me encantará saber más.</p>
+        <header class="phead">
+          <h2>Motor en marcha. ¿Hablamos?</h2>
+          <div class="ticks" aria-hidden="true"></div>
+          <p class="intro">Busco unas prácticas de 20 horas semanales en Madrid. Si tu equipo hace software, sea de automoción o no, me encantará saber más.</p>
+        </header>
         <dl class="rows">
-          <div><dt>Email</dt><dd>[tu email]</dd></div>
-          <div><dt>LinkedIn</dt><dd>[tu perfil]</dd></div>
-          <div><dt>GitHub</dt><dd>[tu usuario]</dd></div>
+          <div><dt>Email</dt><dd><a href="mailto:ivanherreragonza@gmail.com">ivanherreragonza@gmail.com</a></dd></div>
+          <div><dt>LinkedIn</dt><dd><a href="https://www.linkedin.com/in/gonsi/" target="_blank" rel="noopener">linkedin.com/in/gonsi</a></dd></div>
+          <div><dt>GitHub</dt><dd><a href="https://github.com/Gonsiii11" target="_blank" rel="noopener">github.com/Gonsiii11</a></dd></div>
           <div><dt>CV</dt><dd>[enlace al PDF]</dd></div>
+        </dl>
+        <dl class="ficha wide" aria-label="Lo que busco">
+          <div><dt>Busco</dt><dd>Prácticas</dd></div>
+          <div><dt>Ubicación</dt><dd>Madrid</dd></div>
+          <div><dt>Disponibilidad</dt><dd>20 h/semana</dd></div>
+          <div><dt>Formación</dt><dd>Desarrollo de software, 3.º</dd></div>
         </dl>
       </section>
     </div>

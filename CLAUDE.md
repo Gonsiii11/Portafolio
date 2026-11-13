@@ -43,7 +43,7 @@ npm test         # tests de la lógica pura (node:test, sin dependencias)
 5. Los datos de contacto y proyectos entre corchetes `[...]` son huecos por rellenar: no sustituirlos por datos inventados.
 
 ## Pendiente (por orden)
-1. Rellenar Contacto (email, LinkedIn, GitHub, enlace al CV) y los proyectos reales.
+1. Rellenar el enlace al CV en Contacto (email, LinkedIn y GitHub ya están). Los proyectos reales salen de los repos públicos de github.com/Gonsiii11: al añadir uno, va en «Hechos» o «En el taller» con su estado real.
 2. Inclinación del móvil para mirar alrededor (`DeviceOrientationEvent`; en iPhone pide permiso con `requestPermission` desde un toque).
 3. Paisaje de sierra con pinos (rama `paisaje/*`): hechos el fondo, el asfalto, los pinos, el terreno a los lados, las rocas y el mobiliario de carretera (hitos de arista y bionda, hechos con geometría propia en lugar de las farolas).
 4. Probar en móvil y escritorio, y mirar el rendimiento.
