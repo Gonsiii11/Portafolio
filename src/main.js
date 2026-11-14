@@ -3,10 +3,12 @@
 import './style.css';
 import { createPage } from './pagina/pagina.js';
 import { initCredits } from './pagina/creditos.js';
+import { addTechIcons } from './pagina/iconos.js';
 import { createScene } from './escena/escena.js';
 
 var page = createPage();
 initCredits();
+addTechIcons();
 
 var gl = null;
 try { gl = createScene(page); } catch (err) { gl = null; }
