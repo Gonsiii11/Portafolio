@@ -10,6 +10,7 @@ import { createRoad } from './carretera.js';
 import { createTerrain } from './terreno.js';
 import { createSliders } from './deslizables.js';
 import { createRoadside } from './mobiliario.js';
+import { createSign } from './cartel.js';
 import { createForest } from './bosque.js';
 import { createRocks } from './rocas.js';
 import { createLights } from './luces.js';
@@ -40,6 +41,7 @@ export function createScene(page) {
   terrain = createTerrain(scene, loader);
   var sliders = createSliders(terrain.groundY);
   createRoadside(scene, sliders);
+  createSign(scene, sliders);
   var forest = createForest(scene, loader);
   createRocks(scene, loader, sliders, terrain.groundY);
   sky.setSunsetEnvironment();
