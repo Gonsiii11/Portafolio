@@ -1,9 +1,19 @@
 # Portfolio de Iván Herrera González
 
-Portfolio personal en 3D para buscar prácticas de desarrollo de software. La
-experiencia principal muestra una moto en primera persona al atardecer: el
-cuadro de instrumentos abre «Sobre mí», la maneta izquierda «Proyectos», la
-maneta derecha «Contacto» y el depósito permite ver la moto desde fuera.
+Portfolio personal en 3D para buscar prácticas de desarrollo de software.
+**Web:** https://gonsiii11.github.io/Portafolio/
+
+La experiencia principal muestra una moto en primera persona por una carretera
+de sierra. La pantalla TFT de la moto es el menú: un cuadro completo (hora,
+cuentarrevoluciones con velocidad y marcha reales, kilómetros recorridos) con
+tres opciones táctiles, «Sobre mí», «Proyectos» y «Contacto».
+
+- Un toque en la TFT acerca la cámara a la pantalla.
+- De cerca, un toque en una opción la abre como página a pantalla completa,
+  con la escena desenfocada detrás. Tocar fuera o pulsar Escape vuelve.
+- El menú superior hace lo mismo y añade «Ver la moto», que la muestra girando
+  desde fuera. Es también la vía para teclado, lectores de pantalla y la
+  versión sin 3D.
 
 El proyecto está orientado al software de automoción, sin limitarse a ese
 sector. Iván está en 3.º de desarrollo de software y busca prácticas en
@@ -46,7 +56,8 @@ La compilación genera `dist/`.
 - `src/pagina/`: secciones, modos, créditos y versión sin 3D.
 - `src/escena/`: cielo, carretera, terreno, vegetación, rocas, mobiliario,
   curvas y carga progresiva.
-- `src/moto/`: moto, espejos, pantalla y zonas interactivas.
+- `src/moto/`: moto, espejos y pantalla TFT (dibujo del cuadro y lógica del
+  menú, con tests en `tests/tft.test.js`).
 - `src/camara/`: vistas, encuadre y controles de ratón, teclado y táctiles.
 - `public/`: recursos optimizados que se sirven directamente.
 
@@ -82,7 +93,10 @@ los textos. Un buen primer mensaje:
 
 ## Publicar
 
-Se puede publicar en GitHub Pages, Vercel o Netlify. Usa:
+Cada push a `main` publica la web en GitHub Pages automáticamente: el
+workflow de `.github/workflows/` pasa los tests, construye `dist/` y la sube.
+
+Para publicarla en otro sitio (Vercel, Netlify...):
 
 - Build: `npm run build`
 - Directorio de salida: `dist`
