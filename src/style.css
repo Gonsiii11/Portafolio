@@ -23,6 +23,8 @@ body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.5 va
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 [hidden] { display: none !important; }
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+/* titles and the panel get focus by code (so screen readers start there); they are not controls, so no ring */
+[tabindex="-1"]:focus { outline: none; }
 
 /* overlay */
 #ui { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box;
